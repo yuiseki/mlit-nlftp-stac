@@ -219,6 +219,22 @@ not open.
 someone building a derived dataset needs to find what they may lawfully use
 before they need anything else.
 
+## One judgement, marked as one
+
+Everything else in this catalog is taken from what upstream says. The
+cross-theme `rel: related` links are not: 浸水想定 and 避難施設 are a pair
+because someone decided they are, and the data says nothing of the kind.
+
+Two rounds of agents asked for them after finding the advice in AGENTS.md's
+prose and not in any link they could follow. So they exist, in
+`data/combinations.json`, 18 pairs with a reason each, and every generated
+link carries `ksj:editorial: true` and `ksj:reason`. A reader can therefore
+tell a judgement from a fact, which is the only condition on which a judgement
+belongs in a catalog whose whole discipline is not inventing things.
+
+The links are bidirectional and `make validate` fails if one direction is
+missing, because a reader arriving at either end should find the other.
+
 ## Indexed by region as well as by dataset
 
 An Item belongs to one Collection, which is the right home for it and the

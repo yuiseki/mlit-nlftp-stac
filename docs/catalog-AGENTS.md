@@ -109,8 +109,14 @@ it is present, so it is kept for reference and not for filtering.
 
 ## Combining datasets
 
-Nothing in the catalog links one dataset to another by use, so these are worth
-knowing:
+Datasets that are typically used together **are** linked, as `rel: related`
+with `ksj:editorial: true` and a `ksj:reason` saying what the pair is for.
+That flag matters: the upstream data states no such relation, so those links
+are a judgement made here, unlike the `rel: related` links between editions of
+one dataset, which are derived from the titles. 18 pairs, listed in
+`data/combinations.json` in the repository.
+
+The ones worth knowing without looking:
 
 - 浸水想定 (A31a 洪水, A40 津波, A49 高潮, A51 内水) against facilities
   (P04 医療機関, P29 学校, P11 バス停留所). Note that 避難施設 (P20) is 非商用
@@ -214,8 +220,8 @@ the CRS inside their terms of use instead, where this does not find it.
 - **Column names can be placeholders.** The population meshes list
   `PT00_20XX` and `RTC_20XX`; which years are actually present is in the file,
   not here.
-- **Nothing links datasets across themes.** Overlaying 浸水想定 with 避難施設
-  is a normal thing to want and there is no link from one to the other. Editions
+- **The cross-theme links are editorial, and thin.** 18 pairs, chosen by hand;
+  a pair that is not there is not a statement that it is a bad idea. Editions
   of the same dataset are linked, where more than one edition exists: mesh250r6
   has no `ksj:series` because there is no 250 m edition of the older estimates.
 - **A Collection's `license` is `other` if any year in it is.** A40's items

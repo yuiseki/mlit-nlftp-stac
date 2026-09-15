@@ -304,6 +304,39 @@ def main() -> int:
     # is links only, and a description is what tells 津波浸水想定 from 高潮浸水
     # 想定; fetching 110 collection.json files to read them is the scan this
     # catalog exists to avoid.
+    # Datasets that are typically used together. This is editorial: the
+    # upstream data states no such relation, and two agents in a row asked for
+    # it after finding the advice in prose and not in links. Marked
+    # ksj:editorial so a reader can tell it from the series links, which are
+    # derived from the titles.
+    combos_path = DATA / "combinations.json"
+    if combos_path.exists():
+        combos = json.loads(combos_path.read_text())
+        by_id = {c["id"]: c for c in collections}
+        unknown = [c for c in combos["combinations"]
+                   if c[0] not in by_id or c[1] not in by_id]
+        if unknown:
+            print(f"  combinations naming a dataset that does not exist: {unknown}",
+                  file=sys.stderr)
+        n = 0
+        for a, b, why in combos["combinations"]:
+            if a not in by_id or b not in by_id:
+                continue
+            for x, y in ((a, b), (b, a)):
+                by_id[x]["links"].append({
+                    "rel": "related",
+                    "href": f"../{y}/collection.json",
+                    "type": "application/json",
+                    "title": f"よく一緒に使う: {by_id[y]['title']} — {why}",
+                    "ksj:editorial": True,
+                    "ksj:reason": why,
+                })
+                n += 1
+        for c in collections:
+            if any(l.get("ksj:editorial") for l in c["links"]):
+                write_json(out / "collections" / c["id"] / "collection.json", c)
+        print(f"{n} editorial links over {len(combos['combinations'])} pairs")
+
     cat_index = []
     for name, members in sorted(by_category.items(), key=lambda kv: -len(kv[1])):
         write_json(out / "categories" / f"{_slug(name)}.json",

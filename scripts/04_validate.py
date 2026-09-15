@@ -98,6 +98,20 @@ def main() -> int:
             if not (p.parent / href).resolve().exists():
                 errors.append(f"{rel}: dangling {link['rel']} link: {href}")
 
+    # An editorial link must point both ways: a reader arriving at either
+    # dataset should find the other.
+    editorial = {}
+    for p in sorted(cat.glob("collections/*/collection.json")):
+        d = json.loads(p.read_text())
+        for link in d["links"]:
+            if link.get("ksj:editorial"):
+                editorial.setdefault(d["id"], set()).add(
+                    link["href"].split("/")[1])
+    for a, others in editorial.items():
+        for b in others:
+            if a not in editorial.get(b, set()):
+                errors.append(f"collections/{a}: editorial link to {b} is not returned")
+
     regions = list(cat.glob("regions/*.json"))
     licenses = list(cat.glob("licenses/**/*.json"))
     print(f"{len(items)} items checked, {max(len(regions) - 1, 0)} region catalogs, "
