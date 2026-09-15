@@ -15,6 +15,7 @@ from .ksj import parse_filename
 from .mesh import bbox_to_polygon, primary_mesh_bbox
 from .page import spdx_from_terms
 from .table import nendo_of, title_from_cells, year_from_nendo
+from .terms import resolve as resolve_terms
 
 STAC_VERSION = "1.1.0"
 ROOT_TITLE = "国土数値情報 (MLIT National Land Numerical Information)"
@@ -99,11 +100,17 @@ def build_item(
             extent_source = "n03"
     geometry = bbox_to_polygon(bbox) if bbox else None
 
+    # The licence belongs to the year, not to the dataset: 鉄道データ is
+    # CC BY 4.0 from 2020 and 商用可 before it. Resolving it here is the only
+    # place it can be right, because this is the only place a year is known.
+    spdx, redistribution, applied = resolve_terms(terms, year)
     props = {
         "datetime": None,
         # Repeated from the Collection. STAC allows `license` on an Item, and
         # an Item page with a download button and no terms on it is a trap.
-        "license": license,
+        "license": spdx,
+        "ksj:redistribution": redistribution,
+        "ksj:terms_applied": applied,
         "ksj:terms": terms,
         "start_datetime": start,
         "end_datetime": end,
@@ -310,6 +317,140 @@ def build_collection(
 
 REGIONS_ID = "regions"
 
+REDISTRIBUTION = {
+    "allowed": (
+        "再配布できるもの (redistribution allowed)",
+        "利用約款が「複製物の再配布を含む」と明記している商用可のデータと、"
+        "CC BY 4.0 のデータ。出典と改変の旨を書けば再配布できます。",
+    ),
+    "not-allowed": (
+        "再配布できないもの (redistribution not allowed)",
+        "利用約款が非商用と定めるデータ。第1条が「非商用目的のみでの利用"
+        "（ただし複製物の再配布を除く）」と書いているので、再配布はできません。",
+    ),
+    "check": (
+        "確認が要るもの (check before redistributing)",
+        "「一部制限」で提供者ごとに条件が違うもの、年次が読めず条件を解決"
+        "できなかったもの、条件の記載が無いもの。可否は読んで判断してください。",
+    ),
+}
+
+
+def build_license_catalog(
+    status: str,
+    collection_id: str,
+    collection_title: str,
+    entries: Iterable[dict],
+    base_url: str = "",
+) -> dict:
+    """One dataset's Items that share a redistribution status."""
+    entries = list(entries)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": f"license-{status}-{collection_id}",
+        "title": f"{collection_title} — {len(entries)} 件",
+        "description": f"{collection_title} のうち再配布の可否が「{status}」のファイル。",
+        "ksj:redistribution": status,
+        "links": [
+            {"rel": "root", "href": "../../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "./catalog.json", "type": "application/json",
+             "title": REDISTRIBUTION[status][0]},
+            {
+                "rel": "self",
+                "href": (f"{base_url}/licenses/{status}/{collection_id}.json"
+                         if base_url else f"./{collection_id}.json"),
+                "type": "application/json",
+            },
+            {"rel": "license", "href": AGREEMENT, "type": "text/html",
+             "title": "国土数値情報 利用約款"},
+        ]
+        + [
+            {
+                "rel": "item",
+                "href": f"../../collections/{collection_id}/items/{e['id']}.json",
+                "type": "application/geo+json",
+                "title": e["title"],
+            }
+            for e in entries
+        ],
+    }
+
+
+def build_license_status_root(status: str, groups: Iterable[dict], base_url: str = "") -> dict:
+    groups = list(groups)
+    title, description = REDISTRIBUTION[status]
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": f"license-{status}",
+        "title": f"{title} — {sum(g['count'] for g in groups)} 件",
+        "description": description,
+        "ksj:redistribution": status,
+        "links": [
+            {"rel": "root", "href": "../../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": "再配布の可否で引く (by redistribution)"},
+            {
+                "rel": "self",
+                "href": (f"{base_url}/licenses/{status}/catalog.json"
+                         if base_url else "./catalog.json"),
+                "type": "application/json",
+            },
+            {"rel": "license", "href": AGREEMENT, "type": "text/html",
+             "title": "国土数値情報 利用約款"},
+        ]
+        + [
+            {
+                "rel": "child",
+                "href": f"./{g['collection']}.json",
+                "type": "application/json",
+                "title": f"{g['title']} — {g['count']} 件",
+            }
+            for g in groups
+        ],
+    }
+
+
+def build_licenses_root(statuses: Iterable[dict], base_url: str = "") -> dict:
+    statuses = list(statuses)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": "licenses",
+        "title": "再配布の可否で引く (by redistribution)",
+        "description": (
+            "国土数値情報の利用条件は年次ごとに変わります。鉄道データは2020年以降が"
+            "CC BY 4.0 で、それ以前は商用可。学校データは2023年度と2021年度が"
+            "CC BY 4.0 で、2013年度は非商用。ここでは Item ごとに年次から解決した"
+            "結果で引けます。判定の根拠は各 Item の ksj:terms_applied にあります。"
+        ),
+        "links": [
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {
+                "rel": "self",
+                "href": f"{base_url}/licenses/catalog.json" if base_url else "./catalog.json",
+                "type": "application/json",
+            },
+            {"rel": "license", "href": AGREEMENT, "type": "text/html",
+             "title": "国土数値情報 利用約款"},
+        ]
+        + [
+            {
+                "rel": "child",
+                "href": f"./{s['status']}/catalog.json",
+                "type": "application/json",
+                "title": f"{REDISTRIBUTION[s['status']][0]} — {s['count']} 件",
+            }
+            for s in statuses
+        ],
+    }
+
 
 def build_region_catalog(
     code: Optional[str],
@@ -394,7 +535,12 @@ def build_regions_root(regions: Iterable[dict], base_url: str = "") -> dict:
     }
 
 
-def build_root(collections: Iterable[dict], base_url: str = "", regions: bool = False) -> dict:
+def build_root(
+    collections: Iterable[dict],
+    base_url: str = "",
+    regions: bool = False,
+    licenses: bool = False,
+) -> dict:
     return {
         "type": "Catalog",
         "stac_version": STAC_VERSION,
@@ -426,6 +572,18 @@ def build_root(collections: Iterable[dict], base_url: str = "", regions: bool = 
                 }
             ]
             if regions
+            else []
+        )
+        + (
+            [
+                {
+                    "rel": "child",
+                    "href": "./licenses/catalog.json",
+                    "type": "application/json",
+                    "title": "再配布の可否で引く (by redistribution)",
+                }
+            ]
+            if licenses
             else []
         )
         + [

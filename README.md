@@ -34,7 +34,7 @@ curl -s https://stac.yuiseki.net/mlit-nlftp/collections/A40/items/A40-16_39_GML.
   | jq -r '.assets.source.href, .properties.license, .properties["ksj:terms"]'
 ```
 
-## Two ways in
+## Three ways in
 
 **By dataset.** One Collection per KSJ dataset, named as the dataset page
 names itself: `鉄道データ (N02)`, not `N02`. One Item per downloadable zip,
@@ -42,6 +42,11 @@ titled from its own row of the download table with the year first, so sorting
 by title sorts by year, and with the dataset's name after it so the title
 still says what it is when read somewhere else:
 `2025_全国（令和7年） — 鉄道データ (N02)`.
+
+**By what you may republish.** `licenses/allowed/catalog.json` is every file
+whose terms permit redistribution: 9,943 of 21,603, across 41 datasets. 4,146
+may not be redistributed and 7,514 need a human to read the conditions. See
+below for why this is an Item-level question.
 
 **By region.** `regions/39.json` is every file that covers 高知 — 356 of them,
 each carrying the name of the dataset it came from. 56 such catalogs, 16,613 links.
@@ -54,7 +59,10 @@ answering it from Collections alone meant opening all 110.
 |---|---|
 | `assets.source.href` | the zip on nlftp |
 | `assets.source.file:size` | measured by HEAD, where it has been measured |
-| `properties.license` / `ksj:terms` | copied from the Collection, because an Item page has a download button on it |
+| `properties.license` | resolved from the Item's own year, not the Collection's |
+| `properties.ksj:redistribution` | `allowed`, `not-allowed` or `check` |
+| `properties.ksj:terms_applied` | the sentence that decided it |
+| `properties.ksj:terms` | the Collection's full statement, verbatim |
 | `geometry` / `bbox` | a JIS mesh cell, or the prefecture's extent from N03 行政区域 |
 | `properties.ksj:extent_source` | which of those two, in words |
 | `start_datetime` / `end_datetime` | from the page's 年度 column, not guessed from the filename |
@@ -74,13 +82,13 @@ Worth knowing before you plan work around it:
   metropolitan region have no boundary to borrow and carry `"geometry": null`.
 - **`file:size` is 4% covered** while the HEAD sweep runs. `make head` is
   resumable and fills the rest.
-- **Terms can span years inside one Collection.** N02 is CC BY 4.0 from 2020
-  and merely commercial-use-allowed before it, and an Item of either year
-  carries the whole statement. 15 Collections are unambiguous enough for an
-  SPDX identifier; 7 state no terms at all upstream and carry only the link.
-  「一部制限」 counts as ambiguous: A40 lists which prefectures may
-  redistribute and which must ask first, and A27 says the terms differ per
-  municipality.
+- **A licence belongs to a year, not to a dataset.** 鉄道データ is CC BY 4.0
+  from 2020 and 商用可 before it; 学校データ is CC BY 4.0 for 2023 and 2021 and
+  非商用 for 2013. Each Item resolves its own, and `ksj:terms_applied` quotes
+  the sentence that decided it. The Collection keeps the whole statement.
+  「一部制限」 is never resolved automatically: A40 lists which prefectures may
+  redistribute and which must telephone first, and A27 says the terms differ
+  per municipality and stops there. Those are `check`.
 - **Upstream staleness is not flagged.** 避難施設 (P20) stopped in 2012. The
   catalog says when a file is from without saying that nothing newer exists.
 

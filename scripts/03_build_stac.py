@@ -15,8 +15,12 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from mlit_nlftp_stac.page import spdx_from_terms  # noqa: E402
 from mlit_nlftp_stac.stac import (  # noqa: E402
+    REDISTRIBUTION,
     build_collection,
     build_item,
+    build_license_catalog,
+    build_license_status_root,
+    build_licenses_root,
     build_region_catalog,
     build_regions_root,
     build_root,
@@ -110,6 +114,7 @@ def main() -> int:
     out = Path(args.out)
     collections = []
     by_region: dict = {}
+    by_license: dict = {}
     for cid, rows in sorted(groups.items()):
         page_url = rows[0]["page_url"]
         page = pages.get(cid) or {}
@@ -135,6 +140,12 @@ def main() -> int:
             f"- Terms of use (as stated upstream): {coll['ksj:terms'] or 'not stated on the page'}\n"
             f"- SPDX: `{coll['license']}`\n", encoding="utf-8")
         for it in items:
+            status = it["properties"].get("ksj:redistribution") or "check"
+            by_license.setdefault(status, {}).setdefault(
+                cid, {"title": coll["title"], "entries": []}
+            )["entries"].append(
+                {"id": it["id"], "title": it["properties"].get("title") or it["id"]}
+            )
             region = it["properties"].get("ksj:region")
             if not region or region not in regions:
                 # 整備局, 三大都市圏 and mesh numbers sit in the same column as
@@ -173,7 +184,32 @@ def main() -> int:
         print(f"{len(region_index)} regions, "
               f"{sum(r['count'] for r in region_index)} item links -> {out / 'regions'}")
 
-    write_json(out / "catalog.json", build_root(collections, base_url, bool(region_index)))
+    status_index = []
+    for status in ("allowed", "not-allowed", "check"):
+        lic_groups = by_license.get(status) or {}
+        if not lic_groups:
+            continue
+        rows = []
+        for cid, g in sorted(lic_groups.items()):
+            write_json(
+                out / "licenses" / status / f"{cid}.json",
+                build_license_catalog(status, cid, g["title"], g["entries"], base_url),
+            )
+            rows.append({"collection": cid, "title": g["title"], "count": len(g["entries"])})
+        write_json(
+            out / "licenses" / status / "catalog.json",
+            build_license_status_root(status, rows, base_url),
+        )
+        status_index.append({"status": status, "count": sum(r["count"] for r in rows)})
+        print(f"  {REDISTRIBUTION[status][0].split(' ')[0]:<14} "
+              f"{sum(r['count'] for r in rows):>6} 件 / {len(rows)} コレクション")
+    if status_index:
+        write_json(out / "licenses" / "catalog.json", build_licenses_root(status_index, base_url))
+
+    write_json(
+        out / "catalog.json",
+        build_root(collections, base_url, bool(region_index), bool(status_index)),
+    )
     for name in ("README.md", "AGENTS.md"):
         (out / name).write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
     titled = sum(

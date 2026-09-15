@@ -124,6 +124,37 @@ does not: they see a title, a map and a download button. So each Item repeats
 its Collection's `license` and `ksj:terms`, and carries a `license` link of its
 own. Nine of 135 pages state no terms at all; those Items still have the link.
 
+## A licence belongs to a year
+
+The terms of use (agreement_02.html, 第1条) define the two labels that matter:
+
+    （ａ）「商用可」＝ ... 商用目的での利用（複製物の再配布を含む）が可能
+    （ｂ）「非商用」＝ ... 非商用目的のみでの利用（ただし複製物の再配布を除く）
+
+So 商用可 permits redistribution and 非商用 excludes it, in as many words, and
+the question "may I republish this file?" has an answer written down.
+
+What the answer is not is a property of the dataset. 鉄道データ is CC BY 4.0
+from 2020 and 商用可 before it. 学校データ is CC BY 4.0 for 2023 and 2021 and
+非商用 for 2013. 人口集中地区データ is 商用可 from 1995 and 非商用 before. A
+Collection holds every year, so one answer for the Collection is either wrong
+or useless; an Item has a year, so an Item can be right.
+
+`src/mlit_nlftp_stac/terms.py` resolves it, and `ksj:terms_applied` on each
+Item quotes the sentence that decided. Anything it cannot resolve is `check`,
+never a guess: the cost of a wrong "allowed" is someone republishing data they
+were not licensed to. That covers 「一部制限」, where the conditions are the
+provider's and not the page's, and Items whose year could not be read.
+
+Counted this way, 9,943 of 21,603 files may be redistributed, 4,146 may not,
+and 7,514 need a person. Counted per Collection it looked like 15 datasets;
+the difference is entirely the recent years of datasets whose old years are
+not open.
+
+`licenses/<status>/<dataset>.json` makes that browsable, which is the point:
+someone building a derived dataset needs to find what they may lawfully use
+before they need anything else.
+
 ## Indexed by region as well as by dataset
 
 An Item belongs to one Collection, which is the right home for it and the

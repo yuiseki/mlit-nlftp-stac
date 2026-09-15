@@ -59,7 +59,7 @@ def main() -> int:
 
     # Every item link in a region catalog points into a collection; a typo in
     # the relative path would produce a browsable index full of 404s.
-    for p in sorted(cat.glob("regions/*.json")):
+    for p in sorted(list(cat.glob("regions/*.json")) + list(cat.glob("licenses/**/*.json"))):
         d = json.loads(p.read_text())
         rel = p.relative_to(cat)
         for link in d["links"]:
@@ -86,7 +86,9 @@ def main() -> int:
                     errors.append(f"{rel}: item link without a title: {link['href']}")
 
     regions = list(cat.glob("regions/*.json"))
-    print(f"{len(items)} items checked, {max(len(regions) - 1, 0)} region catalogs")
+    licenses = list(cat.glob("licenses/**/*.json"))
+    print(f"{len(items)} items checked, {max(len(regions) - 1, 0)} region catalogs, "
+          f"{len(licenses)} redistribution catalogs")
     for e in errors[:40]:
         print(f"  {e}")
     if len(errors) > 40:
