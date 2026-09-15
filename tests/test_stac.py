@@ -261,6 +261,8 @@ def test_the_distribution_format_comes_from_the_filename():
     assert file_format_of("500m_mesh_2024_32_GEOJSON.zip") == "GeoJSON"
     assert file_format_of("A40-16_39_GML.zip") == "GML"
     assert file_format_of("P30-13.zip") is None
+    # The H30 meshes put the format in the middle and the prefecture last.
+    assert file_format_of("500m_mesh_suikei_2018_shape_05.zip") == "Shapefile"
 
 
 def test_an_item_carries_the_datasets_real_crs_not_just_世界測地系():

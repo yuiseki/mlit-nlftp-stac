@@ -35,7 +35,7 @@ select region, max(year) from 'items.parquet' where collection = 'A40' group by 
 ```
 
 `collections/index.json` (32 KB) is every dataset with its **description**,
-category, keywords, latest year and item count. Start there when you are
+category, keywords, every year it holds, and item count. Start there when you are
 choosing by what a dataset contains rather than by its name: the word that
 tells 津波浸水想定 from 高潮浸水想定 is in the description, not the title.
 `collections/catalog.json` is the same 110 datasets as links only.
@@ -54,17 +54,12 @@ select collection_title, region, title, href, file_size
  where region = '高知' and is_latest and redistribution = 'allowed';
 ```
 
-**Fetch it with a cache-buster. This is not optional.**
-
-```bash
-curl -s "https://stac.yuiseki.net/mlit-nlftp/items.parquet?cb=$(date +%s)" -o items.parquet
-```
-
-The CDN in front of this host has served a copy two columns out of date for
-hours. Four separate readers have hit it, all four concluded the file was
-built wrong, and all four were reading an old copy. If a column named below is
-missing, that is what happened. The Item JSON is authoritative; the Parquet is
-built from it.
+Every file here is served with a five-minute cache lifetime, so a copy is at
+most that stale. It was not always: the CDN once held a Parquet two columns
+out of date for hours, four readers in a row hit it, and all four concluded
+the file had been built wrong. If a column named below is missing, add
+`?cb=$(date +%s)` to rule that out before believing it. The Item JSON is
+authoritative; the Parquet is built from it.
 
 Columns: `id collection collection_title title year start_datetime
 end_datetime license redistribution terms_applied identifier region river
@@ -73,7 +68,12 @@ extent_source href file_size declared_size last_modified etag item_href
 geometry bbox`.
 
 Spatial predicates need DuckDB's spatial extension, version 1.5.5 or later.
-1.3.2 crashes on it.
+1.3.2 crashes on it. A snap-packaged DuckDB cannot read outside your home
+directory, so download the Parquet into `~` rather than a scratch path.
+
+`mesh_code` is set only for files whose name carries a JIS primary mesh, which
+is a handful of hazard datasets. The population meshes are published per
+prefecture, so theirs is empty; the mesh is inside the file.
 
 **A stale copy will lie to you.** The CDN in front of this host has served a
 `items.parquet` two columns out of date, and a 404 for a path that existed,

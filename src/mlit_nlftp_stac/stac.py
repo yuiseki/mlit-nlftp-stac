@@ -229,16 +229,23 @@ def build_item(
 # The page's own 形式 column is absent for 16,531 of 21,603 files and spells
 # itself four ways where it is present (GEOJSON形式 / GeoJSON形式 / geojson形式).
 _FILE_FORMAT = (
-    ("_GEOJSON", "GeoJSON"),
-    ("_SHP", "Shapefile"),
-    ("_GML", "GML"),
+    ("GEOJSON", "GeoJSON"),
+    ("SHAPE", "Shapefile"),
+    ("SHP", "Shapefile"),
+    ("GML", "GML"),
 )
 
 
 def file_format_of(filename: str) -> Optional[str]:
-    name = filename.rsplit(".", 1)[0].upper()
+    """The distribution format, from the filename.
+
+    Most files end in `_GML`, `_SHP` or `_GEOJSON`; the H30 population meshes
+    say `..._shape_05` instead, with the prefecture code last, so the marker
+    is looked for anywhere in the name rather than only at the end.
+    """
+    parts = filename.rsplit(".", 1)[0].upper().split("_")
     for needle, label in _FILE_FORMAT:
-        if name.endswith(needle):
+        if needle in parts:
             return label
     return None
 

@@ -128,6 +128,7 @@ def main() -> int:
     by_license: dict = {}
     by_category: dict = {}
     latest_license: dict = {}
+    latest_redistribution: dict = {}
     for cid, rows in sorted(groups.items()):
         page_url = rows[0]["page_url"]
         page = pages.get(cid) or {}
@@ -160,6 +161,16 @@ def main() -> int:
         for it in items:
             write_json(out / "collections" / cid / "items" / f"{it['id']}.json", it)
         coll = build_collection(cid, page_url, items, page, regions, base_url)
+        # Every year this dataset has, so "is it still being updated" is a
+        # thing a reader can see rather than infer from one number. Stating
+        # that a dataset is discontinued would be a guess; stating that its
+        # newest edition is from 2012 is not.
+        years = sorted({
+            int(it["properties"]["start_datetime"][:4]) for it in items
+            if it["properties"].get("start_datetime")
+        })
+        if years:
+            coll["ksj:years"] = years
         for v in coll.get("ksj:variants") or []:
             for c in v["columns"]:
                 url = c.get("codelist_url")
@@ -181,6 +192,7 @@ def main() -> int:
             for it in items:
                 if (it["properties"].get("start_datetime") or "")[:4] == str(newest):
                     latest_license[cid] = it["properties"]["license"]
+                    latest_redistribution[cid] = it["properties"].get("ksj:redistribution")
                     break
         if page.get("category"):
             by_category.setdefault(page["category"], []).append(
@@ -322,14 +334,22 @@ def main() -> int:
         for a, b, why in combos["combinations"]:
             if a not in by_id or b not in by_id:
                 continue
+            crs_a = (by_id[a].get("ksj:coordinate_system") or "").split("/")[0].strip()
+            crs_b = (by_id[b].get("ksj:coordinate_system") or "").split("/")[0].strip()
+            # A pair this catalog recommends overlaying should say when the two
+            # are on different datums. A40 is JGD2011 and P20 is JGD2000, and a
+            # reader found that only by opening both Items.
+            warn = (f"（測地系が違います: {crs_a} と {crs_b}。重ねる前に変換が要ります）"
+                    if crs_a and crs_b and crs_a != crs_b else "")
             for x, y in ((a, b), (b, a)):
                 by_id[x]["links"].append({
                     "rel": "related",
                     "href": f"../{y}/collection.json",
                     "type": "application/json",
-                    "title": f"よく一緒に使う: {by_id[y]['title']} — {why}",
+                    "title": f"よく一緒に使う: {by_id[y]['title']} — {why}{warn}",
                     "ksj:editorial": True,
                     "ksj:reason": why,
+                    **({"ksj:crs_mismatch": [crs_a, crs_b]} if warn else {}),
                 })
                 n += 1
         for c in collections:
@@ -359,12 +379,17 @@ def main() -> int:
                 "geometry_type": c.get("ksj:geometry_type"),
                 "coordinate_system": c.get("ksj:coordinate_system"),
                 "latest_year": c.get("ksj:latest_year"),
-                "items": sum(1 for x in c["links"] if x["rel"] == "item"),
+                "years": c.get("ksj:years"),
+                "item_count": sum(1 for x in c["links"] if x["rel"] == "item"),
                 # The Collection's own `license` is `other` whenever any year
                 # in it is, which reads as "not open" for a dataset whose
                 # current year is CC BY 4.0. This is the newest year's.
                 "license": c["license"],
                 "latest_license": latest_license.get(c["id"]),
+                # Whether the newest edition may be republished, which is the
+                # question people arrive with and could only be answered by
+                # opening an Item.
+                "latest_redistribution": latest_redistribution.get(c["id"]),
                 "series": c.get("ksj:series"),
             }
             for c in collections
