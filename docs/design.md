@@ -70,12 +70,31 @@ link whose path is `A51-24/A51-24_40_GML.zip`. They are different files
 (12,520,868 and 11,506,692 bytes). Item ids come from the URL path, which is
 unique, not from the printed name.
 
+## Item titles
+
+Each download link sits in a table row whose other cells say what the file is,
+and the table's header names those columns: 地域, 形式, 河川, 測地系, 年度.
+Taking the row gives an Item a title a person can read, and gives the year
+from the page rather than from a guess at the filename.
+
+Four upstream rows (in A46, A47, A48 and N12) hold two download links because
+a `</tr>` is missing. The cells then describe one of the two and there is no
+way to tell which. Both links are kept and neither gets the cells, so eight
+Items have no title. Taking the first link per row instead would drop four
+files; giving both rows the cells would label four files with another file's
+region and year.
+
 ## Dates
 
-A KSJ year may be a calendar year or a fiscal one and the page does not always
+The year now comes from the 年度 column, falling back to the filename only
+when the row was unreadable. The column is written as 2025年（令和7年） or as
+平成25年, so both the western year and the era form are read; 令和元年 is 2019,
+not 令和0年.
+
+A KSJ year may still be a calendar year or a fiscal one and the page does not
 say which. Items set `datetime` to null and span the calendar year with
 `start_datetime` and `end_datetime`, which is the least wrong reading. Where
-no year can be parsed at all, `ksj:datetime_is_unknown` marks it rather than a
+no year can be read at all, `ksj:datetime_is_unknown` marks it rather than a
 plausible-looking date being invented.
 
 ## Naming

@@ -25,6 +25,7 @@ scripts/04_validate.py        catalog/ -> pass or fail
 
 src/mlit_nlftp_stac/ksj.py    filename -> identifier, year, area (the risky part)
 src/mlit_nlftp_stac/page.py   a dataset page -> its own name, description, terms
+src/mlit_nlftp_stac/table.py  a download row -> the region, river, format, year
 src/mlit_nlftp_stac/stac.py   a parsed row -> a STAC Item
 src/mlit_nlftp_stac/mesh.py   JIS mesh code -> bounding box
 
@@ -58,6 +59,11 @@ description the dataset page gives itself, so the catalog reads as
 `鉄道データ (N02)` rather than `N02`. 24 Collections state CC BY 4.0 outright
 and get that SPDX identifier; the rest say something a single identifier
 cannot express and are `other` with their terms quoted verbatim.
+
+Items are titled with the words in their own row of the download table, so a
+file reads as 全国 2025年（令和7年） or
+北海道開発局 GML形式 洪水予報河川･水位周知河川 2025年（令和7年） rather than
+`N02-25_GML`. 99% of them; the rest sit in malformed upstream rows.
 
 Items have one asset, the upstream zip. No format conversion yet.
 

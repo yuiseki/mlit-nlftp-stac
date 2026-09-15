@@ -97,8 +97,13 @@ def main() -> int:
     write_json(out / "catalog.json", build_root(collections))
     for name in ("README.md", "AGENTS.md"):
         (out / name).write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
-    print(f"{len(collections)} collections, "
-          f"{sum(len(v) for v in groups.values())} items -> {out}")
+    titled = sum(
+        1 for c in collections for link in c["links"] if link["rel"] == "item"
+    )
+    named = sum(1 for rows_ in groups.values() for r in rows_ if (r.get("cells") or {}))
+    print(f"{len(collections)} collections, {titled} items -> {out}")
+    print(f"{named} of {titled} items carry the page's own row "
+          f"({named * 100 // max(titled, 1)}%)")
     return 0
 
 

@@ -14,6 +14,7 @@ from typing import Iterable, Optional
 from .ksj import parse_filename
 from .mesh import bbox_to_polygon, primary_mesh_bbox
 from .page import spdx_from_terms
+from .table import title_from_cells, year_from_nendo
 
 STAC_VERSION = "1.1.0"
 FILE_EXT = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
@@ -56,7 +57,13 @@ def item_id(row: dict) -> str:
 def build_item(row: dict, page_url: str, collection_id: str) -> dict:
     """`row` is one harvested link, optionally carrying HEAD results."""
     parsed = parse_filename(posixpath.basename(row["url"]) or row["filename"])
-    start, end = _temporal(parsed.year)
+    cells = row.get("cells") or {}
+
+    # The page states the year in its own 年度 column. Reading it from the
+    # filename works most of the time and is wrong the rest of it, as with the
+    # two A51 links that print the same name for different years.
+    year = year_from_nendo(cells.get("年度", "")) or parsed.year
+    start, end = _temporal(year)
 
     bbox = primary_mesh_bbox(parsed.mesh_code) if parsed.mesh_code else None
     geometry = bbox_to_polygon(bbox) if bbox else None
@@ -70,6 +77,14 @@ def build_item(row: dict, page_url: str, collection_id: str) -> dict:
         "ksj:mesh_code": parsed.mesh_code,
         "ksj:declared_size": row.get("size_label"),
     }
+    title = title_from_cells(cells)
+    if title:
+        props["title"] = title
+    for label, key in (("地域", "ksj:region"), ("河川", "ksj:river"),
+                       ("形式", "ksj:format"), ("測地系", "ksj:crs"),
+                       ("年度", "ksj:nendo")):
+        if cells.get(label):
+            props[key] = cells[label]
     if start is None:
         # STAC allows a null datetime only when both ends are present.
         props["datetime"] = "1970-01-01T00:00:00Z"
