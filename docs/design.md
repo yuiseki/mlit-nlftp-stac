@@ -96,6 +96,16 @@ has no 内容 row.
 Where a dataset has both an unversioned and a versioned page (`A03` and
 `A03-2025`), the versioned one is the current description and wins.
 
+## Browsing it
+
+`make start` runs STAC Browser against the catalog. The catalog is symlinked
+into STAC Browser's own `public/` directory and read from a relative URL, so
+the page and the data share an origin. Two servers on two ports also works,
+and `05_serve.py` sends the CORS headers for it, but then every catalog file
+is a cross-origin request: when something is wrong the page shows an empty
+catalog and blames CORS, whatever the actual cause was. One origin removes
+that whole class of confusion from a dev loop.
+
 ## Open
 
 - A53-2025 has no description upstream. Nothing to do but notice it.

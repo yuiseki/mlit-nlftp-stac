@@ -37,8 +37,15 @@ docs/design.md                what is borrowed from Portolan, and what is not
 make index      # 01 and 02. Hits nlftp; takes hours, and is resumable.
 make build      # 03. Offline, seconds.
 make validate   # 04.
+make start      # browse the result in STAC Browser on :8080
 make test       # unit tests
 ```
+
+`make start` clones STAC Browser into `tmp/` on first run, symlinks `catalog/`
+into its `public/` directory, and serves both from one origin. `make serve`
+exists separately for pointing some other STAC client at the catalog over
+HTTP; it adds CORS headers and runs on :8765, away from the tileserver that
+usually holds :8000.
 
 `make index` is deliberately slow: four workers with a random 1 to 10 second
 pause between requests. The upstream server belongs to a government agency and
