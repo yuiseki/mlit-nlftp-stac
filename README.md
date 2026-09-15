@@ -39,11 +39,12 @@ curl -s https://stac.yuiseki.net/mlit-nlftp/collections/A40/items/A40-16_39_GML.
 **By dataset.** One Collection per KSJ dataset, named as the dataset page
 names itself: `鉄道データ (N02)`, not `N02`. One Item per downloadable zip,
 titled from its own row of the download table with the year first, so sorting
-by title sorts by year: `2025_全国（令和7年）`,
-`2025_北海道開発局 GML形式 洪水予報河川･水位周知河川（令和7年）`.
+by title sorts by year, and with the dataset's name after it so the title
+still says what it is when read somewhere else:
+`2025_全国（令和7年） — 鉄道データ (N02)`.
 
 **By region.** `regions/39.json` is every file that covers 高知 — 356 of them,
-each link labelled with its collection's name. 56 such catalogs, 16,613 links.
+each carrying the name of the dataset it came from. 56 such catalogs, 16,613 links.
 "What is there for this prefecture?" is the question people actually ask, and
 answering it from Collections alone meant opening all 110.
 

@@ -151,12 +151,22 @@ def test_an_item_link_carries_the_items_title():
     assert link["title"] == "2012_高知（平成24年）"
 
 
+def test_an_item_title_says_which_dataset_it_is_from():
+    # A region catalog lists items from many collections. STAC Browser swaps a
+    # link's title for the item's own once it loads it, so a title of
+    # "2006_東京（平成18年）" alone leaves fourteen identical rows.
+    row = _row("https://x/A09-06_13_GML.zip", "A09-06_13_GML.zip")
+    row["cells"] = {"地域": "東京", "年度": "2006年（平成18年）"}
+    it = build_item(row, PAGE, "A09", REGIONS, "other", "", "", "都市地域データ (A09)")
+    assert it["properties"]["title"] == "2006_東京（平成18年） — 都市地域データ (A09)"
+
+
 def test_a_region_catalog_points_back_at_the_items():
     from mlit_nlftp_stac.stac import build_region_catalog
 
     entries = [
-        {"collection": "P20", "collection_title": "避難施設データ (P20)",
-         "id": "P20-12_39_GML", "title": "2012_高知（平成24年）"},
+        {"collection": "P20", "id": "P20-12_39_GML",
+         "title": "2012_高知（平成24年） — 避難施設データ (P20)"},
     ]
     cat = build_region_catalog("39", "高知", entries)
     assert cat["id"] == "region-39"

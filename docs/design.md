@@ -140,7 +140,15 @@ Items whose 地域 is not a place N03 knows get no region entry rather than a
 wrong one. That covers the 地方整備局, the 三大都市圏, and the pages whose
 地域 column holds a mesh number.
 
-Item links inside a Collection now carry the Item's title too. Without it,
+An Item's own title carries the dataset name as well, because a title has to
+say what the thing is wherever it is read. STAC Browser replaces a link's
+title with the Item's own as soon as it loads the Item, so a region catalog of
+339 files was rendering as `2006_東京（平成18年）` fourteen times over with
+nothing to tell the rows apart. The year stays first, so sorting by title
+still sorts by year; within a Collection the suffix is constant and changes
+nothing.
+
+Item links inside a Collection carry the Item's title too. Without it,
 finding 高知 in P20 meant knowing that the two digits in `P20-12_39_GML` are a
 JIS prefecture code, which is exactly the outside knowledge a catalog exists
 to remove.

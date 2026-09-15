@@ -144,7 +144,6 @@ def main() -> int:
             by_region.setdefault(region, []).append(
                 {
                     "collection": cid,
-                    "collection_title": coll["title"],
                     "id": it["id"],
                     "title": it["properties"].get("title") or it["id"],
                 }

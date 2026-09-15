@@ -119,7 +119,14 @@ def build_item(
             "JIS mesh code in the filename" if extent_source == "mesh"
             else "国土数値情報 N03 行政区域 (administrative extent, not the file's own)"
         )
+    # The dataset's name belongs in the title, not only in the link that
+    # points here. STAC Browser replaces a link's title with the Item's own
+    # once it loads the Item, so a region page of 356 files was showing
+    # "2006_東京（平成18年）" fourteen times over with nothing to tell them
+    # apart. A title has to say what the thing is wherever it is read.
     title = title_from_cells(cells)
+    if title and collection_title:
+        title = f"{title} — {collection_title}"
     if title:
         props["title"] = title
     for label, key in (("地域", "ksj:region"), ("河川", "ksj:river"),
@@ -346,7 +353,7 @@ def build_region_catalog(
                 "rel": "item",
                 "href": f"../collections/{e['collection']}/items/{e['id']}.json",
                 "type": "application/geo+json",
-                "title": f"{e['collection_title']} — {e['title']}",
+                "title": e["title"],
             }
             for e in entries
         ],
