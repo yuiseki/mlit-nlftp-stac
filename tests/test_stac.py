@@ -92,18 +92,32 @@ def test_a_collection_with_no_item_extent_falls_back_to_the_measured_japan_bbox(
     assert coll["extent"]["spatial"]["bbox"][0] == REGIONS["全国"]["bbox"]
 
 
-def test_an_item_carries_the_collections_licence_and_terms():
+def test_an_item_carries_the_terms_and_resolves_them_for_its_own_year():
     # Someone can land on an Item page from a search engine, press Download,
-    # and never see the Collection. The terms have to be on the Item too.
+    # and never see the Collection, so the terms have to be on the Item. The
+    # licence is resolved from the Item's year rather than copied whole: this
+    # file is from 2025, which N02 licenses as CC BY 4.0.
+    terms = "2020年（令和2年）以降：オープンデータ（CC_BY_4.0）\n上記以外：商用可"
     row = _row("https://x/N02-25_GML.zip", "N02-25_GML.zip")
-    it = build_item(row, PAGE, "N02", None, "other", "2020年以降：CC_BY_4.0\n上記以外：商用可")
-    assert it["properties"]["license"] == "other"
+    row["cells"] = {"地域": "全国", "年度": "2025年（令和7年）"}
+    it = build_item(row, PAGE, "N02", None, "other", terms)
+    assert it["properties"]["license"] == "CC-BY-4.0"
+    assert it["properties"]["ksj:redistribution"] == "allowed"
     assert "CC_BY_4.0" in it["properties"]["ksj:terms"]
 
+    # ... and an older file of the same dataset resolves to the other rule.
+    old = _row("https://x/N02-13_GML.zip", "N02-13_GML.zip")
+    old["cells"] = {"地域": "全国", "年度": "2013年（平成25年）"}
+    older = build_item(old, PAGE, "N02", None, "other", terms)
+    assert older["properties"]["license"] == "other"
+    assert older["properties"]["ksj:redistribution"] == "allowed"  # 商用可
+    assert older["properties"]["ksj:terms_applied"].startswith("上記以外")
 
-def test_the_licence_defaults_to_other_rather_than_to_nothing():
+
+def test_no_terms_is_check_rather_than_a_quiet_yes():
     it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "X")
     assert it["properties"]["license"] == "other"
+    assert it["properties"]["ksj:redistribution"] == "check"
 
 
 def test_every_item_can_reach_the_terms_even_when_its_page_states_none():
