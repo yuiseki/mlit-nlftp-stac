@@ -7,6 +7,7 @@ help:
 	@echo "make links     just the index (minutes)"
 	@echo "make head      just the HEAD sweep; resumable"
 	@echo "make build     data/ -> catalog/  (offline, seconds)"
+	@echo "               BASE_URL=... sets the absolute self links"
 	@echo "make validate  check catalog/"
 	@echo "make serve     serve catalog/ on :8765 with CORS, for other clients"
 	@echo "make start     browse catalog/ in STAC Browser on :8080"
@@ -21,8 +22,10 @@ links:
 head:
 	$(PY) scripts/02_head_sizes.py
 
+BASE_URL ?= https://stac.yuiseki.net/mlit-nlftp
+
 build:
-	$(PY) scripts/03_build_stac.py
+	$(PY) scripts/03_build_stac.py --base-url "$(BASE_URL)"
 
 validate:
 	$(PY) scripts/04_validate.py
@@ -36,7 +39,9 @@ start:
 test:
 	$(PY) -m pytest tests -q
 
-CATALOG_ROOT ?= /srv/mlit-nlftp-stac
+# stac.yuiseki.net serves /srv/stac, so a second catalog is another directory
+# next to this one rather than another hostname.
+CATALOG_ROOT ?= /srv/stac/mlit-nlftp
 
 install-catalog: 
 	@test -f catalog/catalog.json || { echo "catalog/ is empty; run make build" >&2; exit 1; }

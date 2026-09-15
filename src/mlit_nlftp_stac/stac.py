@@ -65,6 +65,7 @@ def build_item(
     regions: Optional[dict] = None,
     license: str = "other",
     terms: str = "",
+    base_url: str = "",
 ) -> dict:
     """`row` is one harvested link, optionally carrying HEAD results.
 
@@ -169,6 +170,15 @@ def build_item(
         ],
         "assets": {"source": asset},
     }
+    if base_url:
+        item["links"].insert(
+            0,
+            {
+                "rel": "self",
+                "href": f"{base_url}/collections/{collection_id}/items/{item['id']}.json",
+                "type": "application/geo+json",
+            },
+        )
     if bbox:
         item["bbox"] = list(bbox)
     return item
@@ -191,6 +201,7 @@ def build_collection(
     items: Iterable[dict],
     page: Optional[dict] = None,
     regions: Optional[dict] = None,
+    base_url: str = "",
 ) -> dict:
     """`page` is the parsed dataset page, when one was harvested for this id.
 
@@ -254,7 +265,15 @@ def build_collection(
         "links": [
             {"rel": "root", "href": "../catalog.json", "type": "application/json"},
             {"rel": "parent", "href": "../catalog.json", "type": "application/json"},
-            {"rel": "self", "href": "./collection.json", "type": "application/json"},
+            {
+                "rel": "self",
+                "href": (
+                    f"{base_url}/collections/{collection_id}/collection.json"
+                    if base_url
+                    else "./collection.json"
+                ),
+                "type": "application/json",
+            },
             {"rel": "license", "href": AGREEMENT, "type": "text/html", "title": "国土数値情報 利用約款"},
             {"rel": "via", "href": page_url, "type": "text/html"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
@@ -266,7 +285,7 @@ def build_collection(
     }
 
 
-def build_root(collections: Iterable[dict]) -> dict:
+def build_root(collections: Iterable[dict], base_url: str = "") -> dict:
     return {
         "type": "Catalog",
         "stac_version": STAC_VERSION,
@@ -280,7 +299,11 @@ def build_root(collections: Iterable[dict]) -> dict:
         "updated": _utc_now(),
         "links": [
             {"rel": "root", "href": "./catalog.json", "type": "application/json"},
-            {"rel": "self", "href": "./catalog.json", "type": "application/json"},
+            {
+                "rel": "self",
+                "href": f"{base_url}/catalog.json" if base_url else "./catalog.json",
+                "type": "application/json",
+            },
             {"rel": "via", "href": "https://nlftp.mlit.go.jp/ksj/", "type": "text/html"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
         ]

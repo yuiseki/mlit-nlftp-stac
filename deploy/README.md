@@ -4,42 +4,49 @@ The catalog is a directory of static files. Anything that serves files over
 HTTPS with CORS will do; what follows is how it is served from this machine,
 which already runs nginx and a Cloudflare Tunnel.
 
+The published location is `https://stac.yuiseki.net/mlit-nlftp/`. One host,
+one directory per catalog, so the next catalog is a sibling directory rather
+than another hostname.
+
 ## 1. Build and stage
 
 ```bash
-make build
-sudo make install-catalog     # rsync catalog/ -> /srv/mlit-nlftp-stac
+make build                    # BASE_URL defaults to the published location
+sudo make install-catalog     # rsync catalog/ -> /srv/stac/mlit-nlftp
 ```
 
-`install-catalog` uses `rsync --delete`, so a file removed upstream stops
-being served rather than lingering.
+`install-catalog` uses `rsync --delete`, so a file that disappears upstream
+stops being served rather than lingering.
+
+`BASE_URL` only sets the absolute `self` links. Everything else stays
+relative, so the same build still works from a local directory or under a
+different prefix.
 
 ## 2. Serve it
 
 ```bash
-sudo cp deploy/nginx-mlit-nlftp-stac.conf /etc/nginx/sites-available/
-sudo ln -s ../sites-available/nginx-mlit-nlftp-stac.conf /etc/nginx/sites-enabled/
+sudo cp deploy/nginx-mlit-nlftp-stac.conf /etc/nginx/sites-available/stac
+sudo ln -s ../sites-available/stac /etc/nginx/sites-enabled/stac
 sudo nginx -t && sudo systemctl reload nginx
-curl -s localhost:8088/catalog.json | head -c 120
+curl -s localhost:8088/mlit-nlftp/catalog.json | head -c 120
 ```
 
 ## 3. Publish the hostname
 
 The tunnel on this machine runs from a token
-(`/etc/systemd/system/cloudflared.service`), which means its ingress rules
-live in the Cloudflare dashboard, not on disk. Add a public hostname there:
+(`/etc/systemd/system/cloudflared.service`), so its ingress rules live in the
+Cloudflare dashboard rather than on disk. Add a public hostname there:
 
 - Zero Trust → Networks → Tunnels → this tunnel → Public Hostnames → Add
-- Hostname: the chosen name under `yuiseki.net`
+- Hostname: `stac.yuiseki.net`
 - Service: `HTTP` → `localhost:8088`
 
-## A note on the hostname
+## Why a path and not a subdomain per catalog
 
 Cloudflare's Universal SSL covers the apex and **first-level subdomains only**
-(<https://developers.cloudflare.com/ssl/>). `mlit-nlftp.stac.yuiseki.net` is
-two levels deep, so it needs Total TLS enabled on the zone; without it the
-name resolves but TLS fails. `mlit-nlftp-stac.yuiseki.net` is one level and
-works with what is already there.
+(<https://developers.cloudflare.com/ssl/>). `stac.yuiseki.net` is one level and
+works with what is already there; `mlit-nlftp.stac.yuiseki.net` would be two
+and would need Total TLS enabled on the zone.
 
 ## Size
 

@@ -56,6 +56,14 @@ usually holds :8000.
 pause between requests. The upstream server belongs to a government agency and
 there is no reason to hurry it.
 
+## Published at
+
+<https://stac.yuiseki.net/mlit-nlftp/>
+
+One host, one directory per catalog. `make build` bakes that into the
+absolute `self` links; every other link stays relative, so the same build
+works from a local directory too. See [`deploy/`](deploy/).
+
 ## Status
 
 110 Collections, 21,603 Items. Every Collection carries the name and the

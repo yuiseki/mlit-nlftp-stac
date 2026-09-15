@@ -110,3 +110,31 @@ def test_every_item_can_reach_the_terms_even_when_its_page_states_none():
     it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "X", None, "other", "")
     licence = [link for link in it["links"] if link["rel"] == "license"]
     assert licence and licence[0]["href"].startswith("https://nlftp.mlit.go.jp/")
+
+
+BASE = "https://stac.yuiseki.net/mlit-nlftp"
+
+
+def test_without_a_base_url_everything_stays_relative():
+    it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "X")
+    assert not [link for link in it["links"] if link["rel"] == "self"]
+    coll = build_collection("X", PAGE, [it])
+    self_link = [link for link in coll["links"] if link["rel"] == "self"][0]
+    assert self_link["href"] == "./collection.json"
+
+
+def test_a_base_url_makes_the_self_links_absolute_and_leaves_the_rest_alone():
+    # A catalog served under a path prefix has to keep working when copied to
+    # a directory, so only `self` becomes absolute.
+    it = build_item(_row("https://x/N02-25_GML.zip", "N02-25_GML.zip"), PAGE, "N02",
+                    None, "other", "", BASE)
+    self_link = [link for link in it["links"] if link["rel"] == "self"][0]
+    assert self_link["href"] == f"{BASE}/collections/N02/items/N02-25_GML.json"
+    assert [link for link in it["links"] if link["rel"] == "root"][0]["href"] == "../../../catalog.json"
+
+    coll = build_collection("N02", PAGE, [it], None, None, BASE)
+    assert [link for link in coll["links"] if link["rel"] == "self"][0]["href"] == (
+        f"{BASE}/collections/N02/collection.json"
+    )
+
+

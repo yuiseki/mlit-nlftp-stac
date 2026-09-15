@@ -155,6 +155,18 @@ has no 内容 row.
 Where a dataset has both an unversioned and a versioned page (`A03` and
 `A03-2025`), the versioned one is the current description and wins.
 
+## Where it is served
+
+`https://stac.yuiseki.net/mlit-nlftp/`. A path under one host, not a host per
+catalog, for two reasons. Cloudflare's Universal SSL covers the apex and
+first-level subdomains only, so `mlit-nlftp.stac.yuiseki.net` would need Total
+TLS on the zone while `stac.yuiseki.net` needs nothing. And the next catalog
+then costs a directory rather than a DNS record and a tunnel rule.
+
+Only the `self` links are absolute. `root`, `parent` and `item` stay relative,
+so a copy of `catalog/` works from a local directory, from a different prefix,
+or from a USB stick, which is most of the point of a static catalog.
+
 ## Browsing it
 
 `make start` runs STAC Browser against the catalog. The catalog is symlinked

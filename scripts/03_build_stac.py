@@ -64,7 +64,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", action="append", help="build just these collections")
     ap.add_argument("--out", default=str(ROOT / "catalog"))
+    ap.add_argument(
+        "--base-url",
+        default="",
+        help="where the catalog will be served, e.g. https://stac.yuiseki.net/mlit-nlftp. "
+        "Makes the self links absolute; everything else stays relative so the "
+        "catalog still works from a local directory.",
+    )
     args = ap.parse_args()
+    base_url = args.base_url.rstrip("/")
 
     links = load(DATA / "links.jsonl")
     if not links:
@@ -101,13 +109,14 @@ def main() -> int:
         license_ = spdx_from_terms(terms)
         items = [
             build_item(
-                {**r, **head.get(r["url"], {})}, page_url, cid, regions, license_, terms
+                {**r, **head.get(r["url"], {})}, page_url, cid, regions,
+                license_, terms, base_url,
             )
             for r in rows
         ]
         for it in items:
             write_json(out / "collections" / cid / "items" / f"{it['id']}.json", it)
-        coll = build_collection(cid, page_url, items, page, regions)
+        coll = build_collection(cid, page_url, items, page, regions, base_url)
         write_json(out / "collections" / cid / "collection.json", coll)
         (out / "collections" / cid / "README.md").write_text(
             f"# {coll['title']}\n\n{coll['description']}\n\n"
@@ -119,7 +128,7 @@ def main() -> int:
         collections.append(coll)
         print(f"  {cid:<14} {len(items):>5} items  {coll['license']:<10} {coll['title']}")
 
-    write_json(out / "catalog.json", build_root(collections))
+    write_json(out / "catalog.json", build_root(collections, base_url))
     for name in ("README.md", "AGENTS.md"):
         (out / name).write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
     titled = sum(
