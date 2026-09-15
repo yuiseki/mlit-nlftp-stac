@@ -1,6 +1,6 @@
 PY := PYTHONPATH=src python3
 
-.PHONY: help index links head build validate test serve start clean
+.PHONY: help index links head build validate test serve start install-catalog clean
 
 help:
 	@echo "make index     fetch the upstream index and measure every file (hours)"
@@ -11,6 +11,7 @@ help:
 	@echo "make serve     serve catalog/ on :8765 with CORS, for other clients"
 	@echo "make start     browse catalog/ in STAC Browser on :8080"
 	@echo "make test      unit tests"
+	@echo "make install-catalog   rsync catalog/ to \$$(CATALOG_ROOT) (needs sudo)"
 
 index: links head
 
@@ -34,6 +35,14 @@ start:
 
 test:
 	$(PY) -m pytest tests -q
+
+CATALOG_ROOT ?= /srv/mlit-nlftp-stac
+
+install-catalog: 
+	@test -f catalog/catalog.json || { echo "catalog/ is empty; run make build" >&2; exit 1; }
+	mkdir -p $(CATALOG_ROOT)
+	rsync -a --delete catalog/ $(CATALOG_ROOT)/
+	@echo "$(CATALOG_ROOT) updated"
 
 clean:
 	rm -rf catalog
