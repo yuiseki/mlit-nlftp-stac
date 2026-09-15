@@ -206,8 +206,8 @@ the CRS inside their terms of use instead, where this does not find it.
   to borrow and carry `"geometry": null`. Mesh-named files get their real cell.
 - **`file:size` is measured, `ksj:declared_size` is claimed.** The page's own
   figure disagrees with the file often enough not to plan a download on it:
-  one file advertised at 5.19MB is 0.44MB. Coverage of the measured value is
-  still growing; when it is absent, the size is unknown rather than zero.
+  one file advertised at 5.19MB is 0.44MB. Every Item now carries a measured
+  `file:size`; the catalog totals 228.2 GB, 93.2 GB of it redistributable.
 - **Staleness is not flagged.** 避難施設 (P20) stopped in 2012 and nothing here
   says so beyond the dates. Check `ksj:latest_year` against the year you need.
 - **Old and new editions of the same idea are not linked.** There are seven

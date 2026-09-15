@@ -4,8 +4,8 @@ A static STAC catalog for 国土数値情報 (National Land Numerical Informatio
 the geospatial data the Japanese Ministry of Land, Infrastructure, Transport
 and Tourism publishes at <https://nlftp.mlit.go.jp/ksj/>.
 
-Upstream has 21,603 downloadable zip files across 136 dataset pages, about
-214 GB. The only index it offers is HTML, and the download links are not
+Upstream has 21,603 downloadable zip files across 136 dataset pages, 228.2 GB
+measured by HEAD. The only index it offers is HTML, and the download links are not
 `href` attributes but `onclick` handlers, so nothing crawls it by accident.
 This turns that into a catalog a person or an agent can read.
 
@@ -142,10 +142,10 @@ Worth knowing before you plan work around it:
   prefecture's extent, so spatial search works at prefecture granularity and
   no finer. 98% of Items have one; files published per river-bureau or per
   metropolitan region have no boundary to borrow and carry `"geometry": null`.
-- **`file:size` covers the newest vintage**, 7,348 of 21,603 files, measured
-  by HEAD: 87.3 GB. Older vintages carry only `ksj:declared_size`, the figure
-  the page prints, which disagrees with the file often enough not to trust.
-  `make head` fills the rest and is resumable.
+- **`file:size` is measured for every file**, all 21,603 of them, by HEAD:
+  228.2 GB in total, of which 93.2 GB is redistributable. `ksj:declared_size`
+  is the figure the page prints, which disagrees with the file often enough
+  not to trust. `make head` is resumable and re-runs against new vintages.
 - **A licence belongs to a year, not to a dataset.** 鉄道データ is CC BY 4.0
   from 2020 and 商用可 before it; 学校データ is CC BY 4.0 for 2023 and 2021 and
   非商用 for 2013. Each Item resolves its own, and `ksj:terms_applied` quotes
