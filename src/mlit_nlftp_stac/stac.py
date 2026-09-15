@@ -13,6 +13,7 @@ from typing import Iterable, Optional
 
 from .ksj import parse_filename
 from .mesh import bbox_to_polygon, primary_mesh_bbox
+from .page import spdx_from_terms
 
 STAC_VERSION = "1.1.0"
 FILE_EXT = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
@@ -113,7 +114,33 @@ def build_item(row: dict, page_url: str, collection_id: str) -> dict:
     return item
 
 
-def build_collection(collection_id: str, title: str, page_url: str, items: Iterable[dict]) -> dict:
+# Rows of the page's own table that say something a catalogue user wants and
+# that fit in a field. The rest stays on the page.
+_EXTRA_FIELDS = {
+    "座標系": "ksj:coordinate_system",
+    "データ形状": "ksj:geometry_type",
+    "データ基準年月日": "ksj:reference_date",
+    "原典資料": "ksj:source_material",
+    "関連する法律": "ksj:related_law",
+}
+
+
+def build_collection(
+    collection_id: str,
+    page_url: str,
+    items: Iterable[dict],
+    page: Optional[dict] = None,
+) -> dict:
+    """`page` is the parsed dataset page, when one was harvested for this id.
+
+    Without it a Collection can only be called by its identifier, which tells a
+    reader nothing. `A31b` means "浸水想定区域データ" and there is no way to
+    know that from the code.
+    """
+    page = page or {}
+    title = page.get("title") or collection_id
+    description = page.get("description") or ""
+    terms = page.get("terms") or ""
     items = list(items)
     years = sorted(
         {
@@ -130,22 +157,30 @@ def build_collection(collection_id: str, title: str, page_url: str, items: Itera
         "type": "Collection",
         "stac_version": STAC_VERSION,
         "id": collection_id,
-        "title": title,
-        "description": (
-            f"{title} — 国土数値情報 {collection_id}. "
-            f"Metadata mirrored from {page_url}; the files stay on MLIT's servers."
+        "title": f"{title} ({collection_id})",
+        "description": description or (
+            f"国土数値情報 {collection_id}. The dataset page states no description; "
+            f"see {page_url}."
         ),
-        # Terms differ per dataset (CC BY 4.0, commercial-use-allowed, and
-        # non-commercial all occur), so this stays `other` until the dataset's
-        # own terms have been read. Guessing here would mislead a user about
-        # what they are allowed to do.
-        "license": "other",
+        # Read from the page's 使用許諾条件 row, and only promoted to an SPDX id
+        # when the whole statement is that one licence. Most KSJ datasets split
+        # their terms by year, which no single identifier can express.
+        "license": spdx_from_terms(terms),
         "providers": [MLIT],
+        "keywords": [k for k in ("国土数値情報", page.get("identifier") or collection_id) if k],
         "extent": {
             "spatial": {"bbox": spatial},
             "temporal": {"interval": [[years[0] if years else None, years[-1] if years else None]]},
         },
         "updated": _utc_now(),
+        "ksj:identifier": page.get("identifier") or collection_id,
+        "ksj:terms": terms,
+        "ksj:source_page": page_url,
+        **{
+            key: page.get("fields", {})[label]
+            for label, key in _EXTRA_FIELDS.items()
+            if page.get("fields", {}).get(label)
+        },
         "links": [
             {"rel": "root", "href": "../catalog.json", "type": "application/json"},
             {"rel": "parent", "href": "../catalog.json", "type": "application/json"},

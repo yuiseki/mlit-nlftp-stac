@@ -35,10 +35,12 @@ what this repository is for. Its reasoning is worth taking anyway:
 - **Mirror, not official.** Producer and host differ, so this is a mirror. It
   carries a `via` link to the upstream page at every level and records the
   sync time in `updated`.
-- **Explicit licensing.** A Collection must state a license. KSJ terms differ
-  per dataset, so every Collection currently declares `other` with a link to
-  the terms, and gets a real SPDX identifier only once its own terms have been
-  read. `proprietary` is never used.
+- **Explicit licensing.** A Collection must state a license. Each dataset page
+  states its own terms in a 使用許諾条件 row, so those are read and promoted to
+  an SPDX identifier when the whole statement is that one licence. Most are
+  not: `N02` is CC BY 4.0 from 2020 onward and merely "commercial use allowed"
+  before, and a Collection holds every year. Those stay `other`, with the
+  upstream wording kept verbatim in `ksj:terms`. `proprietary` is never used.
 - **A fabricated value is worse than an absent one.** Portolan says this about
   `file:size` and `file:checksum`. It is applied here to footprints too.
 - **README.md and AGENTS.md as links.** They describe the data, so they are
@@ -76,11 +78,27 @@ say which. Items set `datetime` to null and span the calendar year with
 no year can be parsed at all, `ksj:datetime_is_unknown` marks it rather than a
 plausible-looking date being invented.
 
+## Naming
+
+A Collection called `A31b` tells a reader nothing. Every dataset page carries
+its own name in `<title>`, its own prose in a 内容 row, and its identifier in
+a 識別子 row, so `01_fetch_index.py` takes all three from the same fetch that
+harvests the links. No third-party API sits between the source and the words
+that describe it.
+
+Two page layouts exist. Newer pages use `<th>key</th><td>value</td>`; A09,
+A53-2025 and A55-2024 still use `<td><b>key</b></td><td>value</td>`. Reading
+only the first gives those three no description at all, which is the kind of
+gap that looks like missing upstream data rather than a parser that stopped
+early. Both are read. 134 of 135 pages yield a description; A53-2025 genuinely
+has no 内容 row.
+
+Where a dataset has both an unversioned and a versioned page (`A03` and
+`A03-2025`), the versioned one is the current description and wins.
+
 ## Open
 
-- SPDX license per Collection, read from each dataset's own terms.
-- Japanese titles and descriptions; Collection titles are still bare
-  identifiers.
+- A53-2025 has no description upstream. Nothing to do but notice it.
 - Prefecture footprints, which need a per-dataset decision about what the
   two-digit token in a filename means.
 - Whether to emit stac-geoparquet alongside the JSON for bulk querying.

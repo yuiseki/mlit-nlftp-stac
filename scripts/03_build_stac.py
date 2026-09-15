@@ -34,6 +34,23 @@ def collection_id(page: str) -> str:
     return head if head and tail.isdigit() and len(tail) == 4 else page
 
 
+def _pages_by_collection(rows: list) -> dict:
+    """One page per Collection.
+
+    A dataset can have both `A03` and `A03-2025`. They describe the same thing;
+    the versioned page is the current one, so it wins. A page with no
+    description loses to one that has it.
+    """
+    best: dict = {}
+    for r in rows:
+        cid = collection_id(r["page"])
+        version = r["page"].rpartition("-")[2]
+        rank = (bool(r.get("description")), int(version) if version.isdigit() else 0)
+        if cid not in best or rank > best[cid][0]:
+            best[cid] = (rank, r)
+    return {k: v[1] for k, v in best.items()}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", action="append", help="build just these collections")
@@ -45,6 +62,10 @@ def main() -> int:
         print("data/links.jsonl is missing. Run scripts/01_fetch_index.py first.", file=sys.stderr)
         return 1
     head = {r["url"]: r for r in load(DATA / "head.jsonl") if r.get("status") == 200}
+    pages = _pages_by_collection(load(DATA / "pages.jsonl"))
+    if not pages:
+        print("data/pages.jsonl is missing, so collections will be named by "
+              "identifier only. Re-run scripts/01_fetch_index.py.", file=sys.stderr)
     print(f"{len(links)} links, {len(head)} with a HEAD result "
           f"({len(head) * 100 // max(len(links), 1)}%)")
 
@@ -61,14 +82,17 @@ def main() -> int:
         items = [build_item({**r, **head.get(r["url"], {})}, page_url, cid) for r in rows]
         for it in items:
             write_json(out / "collections" / cid / "items" / f"{it['id']}.json", it)
-        coll = build_collection(cid, cid, page_url, items)
+        coll = build_collection(cid, page_url, items, pages.get(cid))
         write_json(out / "collections" / cid / "collection.json", coll)
         (out / "collections" / cid / "README.md").write_text(
-            f"# {cid}\n\n国土数値情報 {cid}. {len(items)} files mirrored from {page_url}\n\n"
-            "Terms of use are stated per dataset upstream; see the `license` link in\n"
-            "`collection.json`.\n", encoding="utf-8")
+            f"# {coll['title']}\n\n{coll['description']}\n\n"
+            f"- Identifier: `{coll['ksj:identifier']}`\n"
+            f"- Files: {len(items)}\n"
+            f"- Source: {page_url}\n"
+            f"- Terms of use (as stated upstream): {coll['ksj:terms'] or 'not stated on the page'}\n"
+            f"- SPDX: `{coll['license']}`\n", encoding="utf-8")
         collections.append(coll)
-        print(f"  {cid:<14} {len(items):>5} items")
+        print(f"  {cid:<14} {len(items):>5} items  {coll['license']:<10} {coll['title']}")
 
     write_json(out / "catalog.json", build_root(collections))
     for name in ("README.md", "AGENTS.md"):

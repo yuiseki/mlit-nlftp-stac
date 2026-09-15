@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""nlftp's HTML index -> data/links.jsonl.
+"""nlftp's HTML index -> data/links.jsonl and data/pages.jsonl.
 
 The download links are not hrefs. They sit in
 `onclick="javascript:DownLd('12.1MB','N02-24_GML.zip','../data/...zip',this)"`,
 which is why a crawler that follows links finds nothing here.
+
+The same fetch also yields each dataset's own words about itself: its name,
+what it contains, its identifier and its terms of use all sit in a table on
+the page. Taking them here means the catalog needs no third-party API to
+explain what `A31b` is.
 """
 import json
 import re
@@ -13,11 +18,16 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import urljoin
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from mlit_nlftp_stac.page import parse_page  # noqa: E402
+
 BASE = "https://nlftp.mlit.go.jp/ksj/"
 DATALIST = BASE + "gml/datalist/"
 UA = {"User-Agent": "mlit-nlftp-stac/0.1 (+https://github.com/yuiseki)"}
 DOWNLD = re.compile(r"javascript:DownLd(?:_new)?\('([^']*)','([^']*)','([^']*)'")
-OUT = Path(__file__).resolve().parents[1] / "data" / "links.jsonl"
+DATA = Path(__file__).resolve().parents[1] / "data"
+OUT = DATA / "links.jsonl"
+OUT_PAGES = DATA / "pages.jsonl"
 
 
 def get(url: str, tries: int = 3) -> str:
@@ -38,7 +48,7 @@ def main() -> int:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     seen, failed, n = set(), [], 0
-    with OUT.open("w", encoding="utf-8") as f:
+    with OUT.open("w", encoding="utf-8") as f, OUT_PAGES.open("w", encoding="utf-8") as fp:
         for i, page in enumerate(pages, 1):
             url = f"{DATALIST}KsjTmplt-{page}.html"
             try:
@@ -46,6 +56,8 @@ def main() -> int:
             except Exception as e:  # a page listed in the index may still 404
                 failed.append((page, str(e)[:80]))
                 continue
+            meta = parse_page(html)
+            fp.write(json.dumps({"page": page, "page_url": url, **meta}, ensure_ascii=False) + "\n")
             for size, filename, path in DOWNLD.findall(html):
                 href = urljoin(DATALIST, path.strip())
                 if href in seen:
@@ -58,6 +70,7 @@ def main() -> int:
                 print(f"  {i}/{len(pages)} pages, {n} links", flush=True)
             time.sleep(0.2)
     print(f"{n} links -> {OUT}")
+    print(f"{len(pages) - len(failed)} pages -> {OUT_PAGES}")
     for page, err in failed:
         print(f"  page failed: {page}: {err}")
     return 0

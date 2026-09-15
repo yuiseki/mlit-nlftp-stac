@@ -18,11 +18,13 @@ metadata lives here.
 
 ```
 scripts/01_fetch_index.py     nlftp HTML -> data/links.jsonl (URL, declared size)
+                                          + data/pages.jsonl (name, description, terms)
 scripts/02_head_sizes.py      data/links.jsonl -> data/head.jsonl (real bytes, ETag)
 scripts/03_build_stac.py      data/*.jsonl -> catalog/
 scripts/04_validate.py        catalog/ -> pass or fail
 
 src/mlit_nlftp_stac/ksj.py    filename -> identifier, year, area (the risky part)
+src/mlit_nlftp_stac/page.py   a dataset page -> its own name, description, terms
 src/mlit_nlftp_stac/stac.py   a parsed row -> a STAC Item
 src/mlit_nlftp_stac/mesh.py   JIS mesh code -> bounding box
 
@@ -44,8 +46,13 @@ there is no reason to hurry it.
 
 ## Status
 
-Early. `03_build_stac.py` emits Items whose only asset is the upstream zip.
-No format conversion yet.
+110 Collections, 21,603 Items. Every Collection carries the name and the
+description the dataset page gives itself, so the catalog reads as
+`鉄道データ (N02)` rather than `N02`. 24 Collections state CC BY 4.0 outright
+and get that SPDX identifier; the rest say something a single identifier
+cannot express and are `other` with their terms quoted verbatim.
+
+Items have one asset, the upstream zip. No format conversion yet.
 
 ## License
 
