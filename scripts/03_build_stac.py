@@ -20,6 +20,7 @@ from mlit_nlftp_stac.stac import (  # noqa: E402
     build_item,
     build_license_catalog,
     build_license_status_root,
+    build_collections_root,
     build_licenses_root,
     build_region_catalog,
     build_regions_root,
@@ -206,6 +207,8 @@ def main() -> int:
     if status_index:
         write_json(out / "licenses" / "catalog.json", build_licenses_root(status_index, base_url))
 
+    write_json(out / "collections" / "catalog.json",
+               build_collections_root(collections, base_url))
     write_json(
         out / "catalog.json",
         build_root(collections, base_url, bool(region_index), bool(status_index)),

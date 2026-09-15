@@ -282,10 +282,10 @@ def build_collection(
             if page.get("fields", {}).get(label)
         },
         "links": [
-            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+            {"rel": "root", "href": "../../catalog.json", "type": "application/json",
              "title": ROOT_TITLE},
             {"rel": "parent", "href": "../catalog.json", "type": "application/json",
-             "title": ROOT_TITLE},
+             "title": "データセット別 (by dataset)"},
             {
                 "rel": "self",
                 "href": (
@@ -392,7 +392,7 @@ def build_license_status_root(status: str, groups: Iterable[dict], base_url: str
             {"rel": "root", "href": "../../catalog.json", "type": "application/json",
              "title": ROOT_TITLE},
             {"rel": "parent", "href": "../catalog.json", "type": "application/json",
-             "title": "再配布の可否で引く (by redistribution)"},
+             "title": "ライセンス別 (by licence)"},
             {
                 "rel": "self",
                 "href": (f"{base_url}/licenses/{status}/catalog.json"
@@ -420,7 +420,7 @@ def build_licenses_root(statuses: Iterable[dict], base_url: str = "") -> dict:
         "type": "Catalog",
         "stac_version": STAC_VERSION,
         "id": "licenses",
-        "title": "再配布の可否で引く (by redistribution)",
+        "title": "ライセンス別 (by licence)",
         "description": (
             "国土数値情報の利用条件は年次ごとに変わります。鉄道データは2020年以降が"
             "CC BY 4.0 で、それ以前は商用可。学校データは2023年度と2021年度が"
@@ -535,6 +535,49 @@ def build_regions_root(regions: Iterable[dict], base_url: str = "") -> dict:
     }
 
 
+def build_collections_root(collections: Iterable[dict], base_url: str = "") -> dict:
+    """The dataset view, as a Catalog of its own.
+
+    Without it the root linked straight to 110 Collections and the two other
+    views sat among them, so the levels of the tree held different kinds of
+    thing. Worse, every Collection's own root and parent links pointed at
+    `../catalog.json`, which from `collections/N02/` is
+    `collections/catalog.json`: a file that did not exist. 110 dangling links,
+    and nothing noticed because the validator only followed item links.
+    """
+    collections = list(collections)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": "collections",
+        "title": "データセット別 (by dataset)",
+        "description": (
+            f"国土数値情報の {len(collections)} データセット。"
+            "識別子ごとに 1 Collection、ダウンロードできる zip ごとに 1 Item。"
+        ),
+        "links": [
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {
+                "rel": "self",
+                "href": f"{base_url}/collections/catalog.json" if base_url else "./catalog.json",
+                "type": "application/json",
+            },
+        ]
+        + [
+            {
+                "rel": "child",
+                "href": f"./{c['id']}/collection.json",
+                "type": "application/json",
+                "title": c.get("title"),
+            }
+            for c in collections
+        ],
+    }
+
+
 def build_root(
     collections: Iterable[dict],
     base_url: str = "",
@@ -553,14 +596,23 @@ def build_root(
         ),
         "updated": _utc_now(),
         "links": [
-            {"rel": "root", "href": "./catalog.json", "type": "application/json"},
+            {"rel": "root", "href": "./catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
             {
                 "rel": "self",
                 "href": f"{base_url}/catalog.json" if base_url else "./catalog.json",
                 "type": "application/json",
             },
-            {"rel": "via", "href": "https://nlftp.mlit.go.jp/ksj/", "type": "text/html"},
-            {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
+            {"rel": "via", "href": "https://nlftp.mlit.go.jp/ksj/", "type": "text/html",
+             "title": "国土数値情報ダウンロードサイト"},
+            {"rel": "describedby", "href": "./README.md", "type": "text/markdown",
+             "title": "README"},
+            {
+                "rel": "child",
+                "href": "./collections/catalog.json",
+                "type": "application/json",
+                "title": "データセット別 (by dataset)",
+            },
         ]
         + (
             [
@@ -580,21 +632,13 @@ def build_root(
                     "rel": "child",
                     "href": "./licenses/catalog.json",
                     "type": "application/json",
-                    "title": "再配布の可否で引く (by redistribution)",
+                    "title": "ライセンス別 (by licence)",
                 }
             ]
             if licenses
             else []
         )
-        + [
-            {
-                "rel": "child",
-                "href": f"./collections/{c['id']}/collection.json",
-                "type": "application/json",
-                "title": c.get("title"),
-            }
-            for c in collections
-        ],
+        ,
     }
 
 

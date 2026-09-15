@@ -36,6 +36,13 @@ curl -s https://stac.yuiseki.net/mlit-nlftp/collections/A40/items/A40-16_39_GML.
 
 ## Three ways in
 
+```
+catalog.json
+├── collections/catalog.json   データセット別   110 datasets
+├── regions/catalog.json       地域別           56 regions
+└── licenses/catalog.json      ライセンス別     3 statuses
+```
+
 **By dataset.** One Collection per KSJ dataset, named as the dataset page
 names itself: `鉄道データ (N02)`, not `N02`. One Item per downloadable zip,
 titled from its own row of the download table with the year first, so sorting
@@ -43,7 +50,7 @@ by title sorts by year, and with the dataset's name after it so the title
 still says what it is when read somewhere else:
 `2025_全国（令和7年） — 鉄道データ (N02)`.
 
-**By what you may republish.** `licenses/allowed/catalog.json` is every file
+**By licence.** `licenses/allowed/catalog.json` is every file
 whose terms permit redistribution: 9,943 of 21,603, across 41 datasets. 4,146
 may not be redistributed and 7,514 need a human to read the conditions. See
 below for why this is an Item-level question.

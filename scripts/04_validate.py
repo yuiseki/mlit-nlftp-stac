@@ -85,6 +85,19 @@ def main() -> int:
                 if not link.get("title"):
                     errors.append(f"{rel}: item link without a title: {link['href']}")
 
+    # Every relative link in every document, whatever its rel. The 110
+    # collections once pointed root and parent at a file that did not exist,
+    # and nothing noticed because only item links were followed.
+    for p in sorted(cat.rglob("*.json")):
+        d = json.loads(p.read_text())
+        rel = p.relative_to(cat)
+        for link in d.get("links", []):
+            href = link.get("href", "")
+            if not href or href.startswith(("http://", "https://")):
+                continue
+            if not (p.parent / href).resolve().exists():
+                errors.append(f"{rel}: dangling {link['rel']} link: {href}")
+
     regions = list(cat.glob("regions/*.json"))
     licenses = list(cat.glob("licenses/**/*.json"))
     print(f"{len(items)} items checked, {max(len(regions) - 1, 0)} region catalogs, "

@@ -11,11 +11,27 @@ downloaded, and has nothing to keep in sync beyond its own metadata.
 
 ## Shape
 
+Three views of the same Items, and nothing else at the top:
+
 ```
-catalog.json                                  Catalog   1
-collections/<id>/collection.json              Collection 110
-collections/<id>/items/<file>.json            Item     21,603
+catalog.json                                  Catalog        1
+collections/catalog.json                        by dataset
+collections/<id>/collection.json                Collection 110
+collections/<id>/items/<file>.json              Item    21,603
+regions/catalog.json                            by region
+regions/<code>.json                             Catalog     56
+licenses/catalog.json                           by licence
+licenses/<status>/<id>.json                     Catalog    120
 ```
+
+The root used to link straight to the 110 Collections, with the two other
+views sitting among them, so one level of the tree held two kinds of thing.
+The best practices ask for the opposite ("use structural elements consistently
+across each level"), and the asymmetry had a bug hiding in it: every
+Collection's root and parent pointed at `../catalog.json`, which from
+`collections/N02/` is `collections/catalog.json`, a file that did not exist.
+110 dangling links. `make validate` now resolves every relative link in every
+document rather than only the item links, which is what would have caught it.
 
 One Collection per dataset, not per dataset-version: the `-2025` on a page
 name such as `A31b-2025` is the page's own version, and every year of A31b
