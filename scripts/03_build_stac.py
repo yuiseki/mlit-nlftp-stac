@@ -249,8 +249,12 @@ def main() -> int:
         out / "catalog.json",
         build_root(collections, base_url, bool(region_index), bool(status_index)),
     )
-    for name in ("README.md", "AGENTS.md"):
-        (out / name).write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
+    # The repository's own AGENTS.md is for someone changing this code. What
+    # the catalog publishes is for whatever is reading the catalog.
+    (out / "README.md").write_text((ROOT / "README.md").read_text(encoding="utf-8"),
+                                   encoding="utf-8")
+    (out / "AGENTS.md").write_text(
+        (ROOT / "docs" / "catalog-AGENTS.md").read_text(encoding="utf-8"), encoding="utf-8")
     titled = sum(
         1 for c in collections for link in c["links"] if link["rel"] == "item"
     )

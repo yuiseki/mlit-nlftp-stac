@@ -360,6 +360,8 @@ def build_collection(
             {"rel": "license", "href": AGREEMENT, "type": "text/html", "title": "国土数値情報 利用約款"},
             {"rel": "via", "href": page_url, "type": "text/html"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
+            {"rel": "agents", "href": "../../AGENTS.md", "type": "text/markdown",
+             "title": "AGENTS.md — how to get an answer out of this catalog"},
         ]
         + [
             {
@@ -669,6 +671,10 @@ def build_root(
              "title": "国土数値情報ダウンロードサイト"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown",
              "title": "README"},
+            # Published and, until now, linked from nowhere: two agents given
+            # this catalog never saw it.
+            {"rel": "agents", "href": "./AGENTS.md", "type": "text/markdown",
+             "title": "AGENTS.md — how to get an answer out of this catalog"},
             # The same Items as one table, for the question a tree cannot
             # answer: everything matching a filter, across all 110 datasets.
             {"rel": "alternate", "href": "./items.parquet",
