@@ -279,13 +279,104 @@ def build_collection(
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
         ]
         + [
-            {"rel": "item", "href": f"./items/{it['id']}.json", "type": "application/geo+json"}
+            {
+                "rel": "item",
+                "href": f"./items/{it['id']}.json",
+                "type": "application/geo+json",
+                # Without this a reader looking for 高知 has to know that the
+                # two digits in P20-12_39_GML are a JIS prefecture code. The
+                # title is already on the Item; not repeating it here made the
+                # catalog unusable without outside knowledge.
+                "title": it["properties"].get("title") or it["id"],
+            }
             for it in items
         ],
     }
 
 
-def build_root(collections: Iterable[dict], base_url: str = "") -> dict:
+REGIONS_ID = "regions"
+
+
+def build_region_catalog(
+    code: Optional[str],
+    name: str,
+    entries: Iterable[dict],
+    base_url: str = "",
+) -> dict:
+    """A browsable list of every Item that covers one region.
+
+    Items live under their Collection, which is the right place for them and
+    the wrong one for the question a planner actually asks: "what is there for
+    高知?". Answering that from Collections alone means opening all 110 of
+    them. This is the same Items, indexed the other way.
+    """
+    entries = list(entries)
+    slug = code or name
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": f"region-{slug}",
+        "title": f"{name} ({code})" if code else name,
+        "description": (
+            f"国土数値情報 のうち {name} を対象とするファイル {len(entries)} 件。"
+            "Collection ごとに分かれた Item を地域から引くための索引です。"
+        ),
+        "ksj:region": name,
+        "ksj:region_code": code,
+        "links": [
+            {"rel": "root", "href": "../catalog.json", "type": "application/json"},
+            {"rel": "parent", "href": "./catalog.json", "type": "application/json"},
+            {
+                "rel": "self",
+                "href": f"{base_url}/regions/{slug}.json" if base_url else f"./{slug}.json",
+                "type": "application/json",
+            },
+        ]
+        + [
+            {
+                "rel": "item",
+                "href": f"../collections/{e['collection']}/items/{e['id']}.json",
+                "type": "application/geo+json",
+                "title": f"{e['collection_title']} — {e['title']}",
+            }
+            for e in entries
+        ],
+    }
+
+
+def build_regions_root(regions: Iterable[dict], base_url: str = "") -> dict:
+    regions = list(regions)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": REGIONS_ID,
+        "title": "地域別 (by region)",
+        "description": (
+            "同じ Item を地域から引くための索引。Collection を 110 件開かずに "
+            "「この県には何があるか」に答えるためのものです。"
+        ),
+        "links": [
+            {"rel": "root", "href": "../catalog.json", "type": "application/json"},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json"},
+            {
+                "rel": "self",
+                "href": f"{base_url}/regions/catalog.json" if base_url else "./catalog.json",
+                "type": "application/json",
+            },
+        ]
+        + [
+            {
+                "rel": "child",
+                "href": f"./{r['slug']}.json",
+                "type": "application/json",
+                "title": f"{r['title']} — {r['count']} 件",
+            }
+            for r in regions
+        ],
+    }
+
+
+def build_root(collections: Iterable[dict], base_url: str = "", regions: bool = False) -> dict:
     return {
         "type": "Catalog",
         "stac_version": STAC_VERSION,
@@ -307,6 +398,18 @@ def build_root(collections: Iterable[dict], base_url: str = "") -> dict:
             {"rel": "via", "href": "https://nlftp.mlit.go.jp/ksj/", "type": "text/html"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
         ]
+        + (
+            [
+                {
+                    "rel": "child",
+                    "href": "./regions/catalog.json",
+                    "type": "application/json",
+                    "title": "地域別 (by region)",
+                }
+            ]
+            if regions
+            else []
+        )
         + [
             {
                 "rel": "child",

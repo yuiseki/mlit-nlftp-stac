@@ -124,6 +124,27 @@ does not: they see a title, a map and a download button. So each Item repeats
 its Collection's `license` and `ksj:terms`, and carries a `license` link of its
 own. Nine of 135 pages state no terms at all; those Items still have the link.
 
+## Indexed by region as well as by dataset
+
+An Item belongs to one Collection, which is the right home for it and the
+wrong answer to the question a planner actually asks: what is there for 高知?
+Answering that from Collections alone means opening all 110 of them, and two
+agents asked to use this catalog both said so unprompted.
+
+`regions/<code>.json` is a Catalog of the same Items seen the other way, one
+per prefecture, per 地方, and one for 全国. 56 of them, 16,613 item links. Each
+link carries the collection's name alongside the item's title, so the list
+reads as 避難施設データ (P20) — 2012_高知（平成24年）.
+
+Items whose 地域 is not a place N03 knows get no region entry rather than a
+wrong one. That covers the 地方整備局, the 三大都市圏, and the pages whose
+地域 column holds a mesh number.
+
+Item links inside a Collection now carry the Item's title too. Without it,
+finding 高知 in P20 meant knowing that the two digits in `P20-12_39_GML` are a
+JIS prefecture code, which is exactly the outside knowledge a catalog exists
+to remove.
+
 ## Dates
 
 The year now comes from the 年度 column, falling back to the filename only

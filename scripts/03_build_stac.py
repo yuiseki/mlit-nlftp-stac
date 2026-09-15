@@ -14,7 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from mlit_nlftp_stac.page import spdx_from_terms  # noqa: E402
-from mlit_nlftp_stac.stac import build_collection, build_item, build_root, write_json  # noqa: E402
+from mlit_nlftp_stac.stac import (  # noqa: E402
+    build_collection,
+    build_item,
+    build_region_catalog,
+    build_regions_root,
+    build_root,
+    write_json,
+)
 
 DATA = ROOT / "data"
 
@@ -102,6 +109,7 @@ def main() -> int:
 
     out = Path(args.out)
     collections = []
+    by_region: dict = {}
     for cid, rows in sorted(groups.items()):
         page_url = rows[0]["page_url"]
         page = pages.get(cid) or {}
@@ -125,10 +133,47 @@ def main() -> int:
             f"- Source: {page_url}\n"
             f"- Terms of use (as stated upstream): {coll['ksj:terms'] or 'not stated on the page'}\n"
             f"- SPDX: `{coll['license']}`\n", encoding="utf-8")
+        for it in items:
+            region = it["properties"].get("ksj:region")
+            if not region or region not in regions:
+                # 整備局, 三大都市圏 and mesh numbers sit in the same column as
+                # prefecture names but are not places N03 knows, so they get no
+                # region entry rather than a wrong one.
+                continue
+            by_region.setdefault(region, []).append(
+                {
+                    "collection": cid,
+                    "collection_title": coll["title"],
+                    "id": it["id"],
+                    "title": it["properties"].get("title") or it["id"],
+                }
+            )
         collections.append(coll)
         print(f"  {cid:<14} {len(items):>5} items  {coll['license']:<10} {coll['title']}")
 
-    write_json(out / "catalog.json", build_root(collections, base_url))
+    region_index = []
+    for name, entries in sorted(
+        by_region.items(), key=lambda kv: (regions[kv[0]].get("code") or "")
+    ):
+        code = regions[name].get("code")
+        slug = code or name
+        write_json(
+            out / "regions" / f"{slug}.json",
+            build_region_catalog(code, name, entries, base_url),
+        )
+        region_index.append(
+            {
+                "slug": slug,
+                "title": f"{name} ({code})" if code else name,
+                "count": len(entries),
+            }
+        )
+    if region_index:
+        write_json(out / "regions" / "catalog.json", build_regions_root(region_index, base_url))
+        print(f"{len(region_index)} regions, "
+              f"{sum(r['count'] for r in region_index)} item links -> {out / 'regions'}")
+
+    write_json(out / "catalog.json", build_root(collections, base_url, bool(region_index)))
     for name in ("README.md", "AGENTS.md"):
         (out / name).write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
     titled = sum(

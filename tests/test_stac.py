@@ -138,3 +138,38 @@ def test_a_base_url_makes_the_self_links_absolute_and_leaves_the_rest_alone():
     )
 
 
+
+
+def test_an_item_link_carries_the_items_title():
+    # Without it, finding 高知 in a collection means knowing that the two
+    # digits in P20-12_39_GML are a JIS prefecture code.
+    row = _row("https://x/P20-12_39_GML.zip", "P20-12_39_GML.zip")
+    row["cells"] = {"地域": "高知", "年度": "2012年（平成24年）"}
+    it = build_item(row, PAGE, "P20", REGIONS)
+    coll = build_collection("P20", PAGE, [it])
+    link = [x for x in coll["links"] if x["rel"] == "item"][0]
+    assert link["title"] == "2012_高知（平成24年）"
+
+
+def test_a_region_catalog_points_back_at_the_items():
+    from mlit_nlftp_stac.stac import build_region_catalog
+
+    entries = [
+        {"collection": "P20", "collection_title": "避難施設データ (P20)",
+         "id": "P20-12_39_GML", "title": "2012_高知（平成24年）"},
+    ]
+    cat = build_region_catalog("39", "高知", entries)
+    assert cat["id"] == "region-39"
+    assert cat["title"] == "高知 (39)"
+    link = [x for x in cat["links"] if x["rel"] == "item"][0]
+    assert link["href"] == "../collections/P20/items/P20-12_39_GML.json"
+    assert "避難施設データ" in link["title"]
+
+
+def test_the_region_index_is_only_a_child_of_the_root_when_it_exists():
+    from mlit_nlftp_stac.stac import build_root
+
+    without = build_root([], "")
+    assert not [x for x in without["links"] if x["href"].endswith("regions/catalog.json")]
+    with_ = build_root([], "", regions=True)
+    assert [x for x in with_["links"] if x["href"].endswith("regions/catalog.json")]

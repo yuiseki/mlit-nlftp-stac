@@ -57,6 +57,19 @@ def main() -> int:
             if "file:size" in a and not isinstance(a["file:size"], int):
                 errors.append(f"{rel}: asset {name} has a non-integer file:size")
 
+    # Every item link in a region catalog points into a collection; a typo in
+    # the relative path would produce a browsable index full of 404s.
+    for p in sorted(cat.glob("regions/*.json")):
+        d = json.loads(p.read_text())
+        rel = p.relative_to(cat)
+        for link in d["links"]:
+            if link["rel"] not in ("item", "child"):
+                continue
+            if not (p.parent / link["href"]).resolve().exists():
+                errors.append(f"{rel}: dangling {link['rel']} link: {link['href']}")
+            if link["rel"] == "item" and not link.get("title"):
+                errors.append(f"{rel}: item link without a title: {link['href']}")
+
     for p in cat.glob("collections/*/collection.json"):
         d = json.loads(p.read_text())
         rel = p.relative_to(cat)
@@ -69,8 +82,11 @@ def main() -> int:
                 target = (p.parent / link["href"]).resolve()
                 if not target.exists():
                     errors.append(f"{rel}: item link points at a missing file: {link['href']}")
+                if not link.get("title"):
+                    errors.append(f"{rel}: item link without a title: {link['href']}")
 
-    print(f"{len(items)} items checked")
+    regions = list(cat.glob("regions/*.json"))
+    print(f"{len(items)} items checked, {max(len(regions) - 1, 0)} region catalogs")
     for e in errors[:40]:
         print(f"  {e}")
     if len(errors) > 40:

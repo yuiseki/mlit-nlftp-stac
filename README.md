@@ -9,7 +9,8 @@ about 214 GB in total. The only index it offers is HTML, and the download
 links are not `href` attributes but `onclick` handlers, so nothing can crawl
 it by accident. This repository turns that into a catalog a person or an agent
 can read: one STAC Collection per KSJ dataset, one Item per zip, with the
-download URL, its real byte count, and its last-modified time.
+download URL and, where it has been measured, the file's real byte count and
+last-modified time.
 
 This is a mirror, not a source. The data stays on MLIT's servers; only the
 metadata lives here.
@@ -87,6 +88,10 @@ the rest sit in malformed upstream rows.
 Each Item repeats its Collection's licence and terms and carries its own
 licence link, because an Item page has a download button on it and whoever
 lands there may never see the Collection.
+
+The same Items are also indexed by region: `regions/39.json` is every file
+that covers 高知, 356 of them, with the collection's name on each link. Asking
+"what is there for this prefecture?" no longer means opening 110 collections.
 
 98% of Items carry a footprint, taken either from a mesh code in the filename
 or from the extent of the matching prefecture in N03 行政区域. The remainder
