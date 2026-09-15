@@ -56,3 +56,10 @@ def test_older_pages_use_a_bold_td_instead_of_a_th():
     assert page["identifier"] == "A09"
     assert page["description"].startswith("土地利用基本計画に基づき指定された都市地域")
     assert page["terms"] == "商用可"
+
+
+def test_partially_restricted_is_not_promoted_to_cc_by():
+    # A40 is CC BY 4.0 for 東京都 and needs a phone call for 京都府; A27 says
+    # the terms differ per municipality. Labelling the Collection CC-BY-4.0
+    # tells a user they may redistribute data they may not.
+    assert spdx_from_terms("オープンデータ（CC_BY_4.0（一部制限））") == "other"

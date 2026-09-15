@@ -63,7 +63,11 @@ def parse_page(page_html: str) -> Dict:
 
 _CC_BY_4 = re.compile(r"CC[_ ]?BY[_ ]?4\.0", re.I)
 # Any of these means the terms are not one blanket licence.
-_QUALIFIERS = ("上記以外", "以前", "非商用", "商用不可", "申請", "承諾", "問い合わせ")
+# 「一部制限」 is the upstream's own word for "CC BY 4.0, except where it is
+# not": A40 lists which prefectures may redistribute and which must ask first,
+# and A27 says the terms differ per municipality and cannot be resolved at all.
+# A Collection holding all of them is not CC BY 4.0.
+_QUALIFIERS = ("一部制限", "上記以外", "以前", "非商用", "商用不可", "申請", "承諾", "問い合わせ")
 
 
 def spdx_from_terms(terms: str) -> str:

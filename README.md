@@ -76,8 +76,11 @@ Worth knowing before you plan work around it:
   resumable and fills the rest.
 - **Terms can span years inside one Collection.** N02 is CC BY 4.0 from 2020
   and merely commercial-use-allowed before it, and an Item of either year
-  carries the whole statement. 19 Collections are unambiguous enough for an
+  carries the whole statement. 15 Collections are unambiguous enough for an
   SPDX identifier; 7 state no terms at all upstream and carry only the link.
+  「一部制限」 counts as ambiguous: A40 lists which prefectures may
+  redistribute and which must ask first, and A27 says the terms differ per
+  municipality.
 - **Upstream staleness is not flagged.** 避難施設 (P20) stopped in 2012. The
   catalog says when a file is from without saying that nothing newer exists.
 
