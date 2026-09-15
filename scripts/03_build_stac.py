@@ -15,12 +15,15 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from mlit_nlftp_stac.page import spdx_from_terms  # noqa: E402
 from mlit_nlftp_stac.table import nendo_of, year_from_nendo  # noqa: E402
+from mlit_nlftp_stac.stac import _slug  # noqa: E402
 from mlit_nlftp_stac.stac import (  # noqa: E402
     REDISTRIBUTION,
     build_collection,
     build_item,
     build_license_catalog,
     build_license_status_root,
+    build_categories_root,
+    build_category_catalog,
     build_collections_root,
     build_licenses_root,
     build_region_catalog,
@@ -123,6 +126,8 @@ def main() -> int:
     collections = []
     by_region: dict = {}
     by_license: dict = {}
+    by_category: dict = {}
+    latest_license: dict = {}
     for cid, rows in sorted(groups.items()):
         page_url = rows[0]["page_url"]
         page = pages.get(cid) or {}
@@ -130,6 +135,7 @@ def main() -> int:
         license_ = spdx_from_terms(terms)
         coll_title = f"{page.get('title') or cid} ({cid})"
         identifier = page.get("identifier") or cid
+        crs = (page.get("fields") or {}).get("座標系", "")
         # The newest year per 地域, so an Item can say whether it is the
         # current file for its own prefecture rather than for the dataset.
         # Keyed on the region alone: 形式 is written inconsistently between
@@ -147,7 +153,7 @@ def main() -> int:
         items = [
             build_item(
                 {**r, **head.get(r["url"], {})}, page_url, cid, regions,
-                license_, terms, base_url, coll_title, identifier, latest_years,
+                license_, terms, base_url, coll_title, identifier, latest_years, crs,
             )
             for r in rows
         ]
@@ -168,6 +174,18 @@ def main() -> int:
             f"- Source: {page_url}\n"
             f"- Terms of use (as stated upstream): {coll.get('ksj:terms') or 'not stated on the page'}\n"
             f"- SPDX: `{coll['license']}`\n", encoding="utf-8")
+        newest = max(
+            (int(it["properties"]["start_datetime"][:4]) for it in items
+             if it["properties"].get("start_datetime")), default=None)
+        if newest is not None:
+            for it in items:
+                if (it["properties"].get("start_datetime") or "")[:4] == str(newest):
+                    latest_license[cid] = it["properties"]["license"]
+                    break
+        if page.get("category"):
+            by_category.setdefault(page["category"], []).append(
+                {"id": cid, "title": coll_title, "count": len(items)})
+
         for it in items:
             status = it["properties"].get("ksj:redistribution") or "check"
             by_license.setdefault(status, {}).setdefault(
@@ -286,6 +304,16 @@ def main() -> int:
     # is links only, and a description is what tells 津波浸水想定 from 高潮浸水
     # 想定; fetching 110 collection.json files to read them is the scan this
     # catalog exists to avoid.
+    cat_index = []
+    for name, members in sorted(by_category.items(), key=lambda kv: -len(kv[1])):
+        write_json(out / "categories" / f"{_slug(name)}.json",
+                   build_category_catalog(name, members, base_url))
+        cat_index.append({"name": name, "count": len(members)})
+    if cat_index:
+        write_json(out / "categories" / "catalog.json",
+                   build_categories_root(cat_index, base_url))
+        print(f"{len(cat_index)} categories -> {out / 'categories'}")
+
     write_json(out / "collections" / "index.json", {
         "description": "全 Collection の説明文つき一覧。語句で選ぶための索引です。",
         "collections": [
@@ -295,9 +323,15 @@ def main() -> int:
                 "description": c.get("description", ""),
                 "category": c.get("ksj:category"),
                 "keywords": c.get("keywords", []),
+                "geometry_type": c.get("ksj:geometry_type"),
+                "coordinate_system": c.get("ksj:coordinate_system"),
                 "latest_year": c.get("ksj:latest_year"),
                 "items": sum(1 for x in c["links"] if x["rel"] == "item"),
+                # The Collection's own `license` is `other` whenever any year
+                # in it is, which reads as "not open" for a dataset whose
+                # current year is CC BY 4.0. This is the newest year's.
                 "license": c["license"],
+                "latest_license": latest_license.get(c["id"]),
                 "series": c.get("ksj:series"),
             }
             for c in collections
@@ -308,7 +342,8 @@ def main() -> int:
                build_collections_root(collections, base_url))
     write_json(
         out / "catalog.json",
-        build_root(collections, base_url, bool(region_index), bool(status_index)),
+        build_root(collections, base_url, bool(region_index), bool(status_index),
+                   bool(cat_index)),
     )
     # The repository's own AGENTS.md is for someone changing this code. What
     # the catalog publishes is for whatever is reading the catalog.

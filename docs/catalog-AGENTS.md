@@ -22,6 +22,7 @@ urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "you"}
 |---|---|
 | everything matching a filter | `items.parquet` (1.1 MB, all 21,603 items) |
 | what exists for a prefecture | `regions/<JIS code>.json` |
+| what there is on a theme | `categories/交通.json` and its 13 siblings |
 | what you may republish | `licenses/allowed/catalog.json` |
 | one dataset in detail | `collections/<id>/collection.json` |
 
@@ -45,10 +46,23 @@ select collection_title, region, title, href, file_size
  where region = '高知' and is_latest and redistribution = 'allowed';
 ```
 
+**Fetch it with a cache-buster. This is not optional.**
+
+```bash
+curl -s "https://stac.yuiseki.net/mlit-nlftp/items.parquet?cb=$(date +%s)" -o items.parquet
+```
+
+The CDN in front of this host has served a copy two columns out of date for
+hours. Four separate readers have hit it, all four concluded the file was
+built wrong, and all four were reading an old copy. If a column named below is
+missing, that is what happened. The Item JSON is authoritative; the Parquet is
+built from it.
+
 Columns: `id collection collection_title title year start_datetime
 end_datetime license redistribution terms_applied identifier region river
-format crs nendo mesh_code is_latest category extent_source href file_size
-declared_size last_modified etag item_href geometry`.
+format file_format crs coordinate_system nendo mesh_code is_latest category
+extent_source href file_size declared_size last_modified etag item_href
+geometry bbox`.
 
 Spatial predicates need DuckDB's spatial extension, version 1.5.5 or later.
 1.3.2 crashes on it.
@@ -77,9 +91,11 @@ is current to 2024 in most places and stops at 2016 in 高知 and 徳島. So:
 - Item titles start with the year (`2016_高知（平成28年） — 津波浸水想定データ
   (A40)`), so sorting by title sorts by year.
 
-Many datasets publish the same year in several formats. `ksj:format` says
-which; GML, シェープ形式 and GeoJSON形式 are the usual three, and some zips
-contain two at once ("シェープ、geojson形式").
+Many datasets publish the same year in several formats. Use
+`ksj:file_format`, which is `GML`, `Shapefile` or `GeoJSON`, derived from the
+filename and present for 96% of files. `ksj:format` is the page's own word for
+the same thing: absent for three quarters of them and spelled four ways where
+it is present, so it is kept for reference and not for filtering.
 
 ## Combining datasets
 
@@ -156,7 +172,10 @@ single shapefile. 105 of 110 datasets have schemas; five state none upstream.
 Nine code lists are spreadsheets rather than pages and are not read.
 
 Shapefiles are Shift-JIS in older vintages and both encodings in newer ones.
-`ksj:crs` says the CRS, usually JGD2011.
+`ksj:coordinate_system` is the dataset's CRS as its page states it: JGD2011 or
+JGD2000, and they differ between datasets you might overlay (A40 is JGD2011,
+P20 is JGD2000). `ksj:crs` is the download table's own word, usually the
+family name 世界測地系, which is not enough to transform with.
 
 ## What this catalog gets wrong, and where it is thin
 
@@ -181,9 +200,13 @@ Shapefiles are Shift-JIS in older vintages and both encodings in newer ones.
 - **Column names can be placeholders.** The population meshes list
   `PT00_20XX` and `RTC_20XX`; which years are actually present is in the file,
   not here.
-- **Nothing links related datasets.** Overlaying 浸水想定 with 避難施設 is a
-  normal thing to want and there is no link from one to the other, nor from an
-  old edition of a dataset to its replacement.
+- **Nothing links datasets across themes.** Overlaying 浸水想定 with 避難施設
+  is a normal thing to want and there is no link from one to the other. Editions
+  of the same dataset are linked, where more than one edition exists: mesh250r6
+  has no `ksj:series` because there is no 250 m edition of the older estimates.
+- **A Collection's `license` is `other` if any year in it is.** A40's items
+  resolve to CC-BY-4.0 for the prefectures its terms name, while the Collection
+  stays `other`, because a Collection has no prefecture. Read the Item.
 
 ## Quirks of the upstream site, if you go there
 

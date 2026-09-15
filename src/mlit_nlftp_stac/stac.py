@@ -7,6 +7,7 @@ here, so nothing in the catalog can go stale except the metadata itself.
 
 import json
 import posixpath
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
@@ -72,6 +73,7 @@ def build_item(
     collection_title: str = "",
     dataset_identifier: str = "",
     latest_years: Optional[dict] = None,
+    coordinate_system: str = "",
 ) -> dict:
     """`row` is one harvested link, optionally carrying HEAD results.
 
@@ -145,6 +147,14 @@ def build_item(
                        ("形式", "ksj:format"), ("測地系", "ksj:crs")):
         if cells.get(label):
             props[key] = cells[label]
+    fmt = file_format_of(posixpath.basename(row["url"]) or row["filename"])
+    if fmt:
+        props["ksj:file_format"] = fmt
+    # The row says 世界測地系, which is a family and not a CRS. The dataset page
+    # says JGD2011 or JGD2000, and A40 and P20 differ, which matters to anyone
+    # overlaying them.
+    if coordinate_system:
+        props["ksj:coordinate_system"] = coordinate_system
     if nendo_of(cells):
         props["ksj:nendo"] = nendo_of(cells)
     # Whether this is the newest year for its region. Without it, finding the
@@ -213,6 +223,24 @@ def build_item(
     if bbox:
         item["bbox"] = list(bbox)
     return item
+
+
+# The distribution format, taken from the filename rather than from the page.
+# The page's own 形式 column is absent for 16,531 of 21,603 files and spells
+# itself four ways where it is present (GEOJSON形式 / GeoJSON形式 / geojson形式).
+_FILE_FORMAT = (
+    ("_GEOJSON", "GeoJSON"),
+    ("_SHP", "Shapefile"),
+    ("_GML", "GML"),
+)
+
+
+def file_format_of(filename: str) -> Optional[str]:
+    name = filename.rsplit(".", 1)[0].upper()
+    for needle, label in _FILE_FORMAT:
+        if name.endswith(needle):
+            return label
+    return None
 
 
 def _table_column(col: dict) -> dict:
@@ -380,6 +408,85 @@ def build_collection(
 
 
 REGIONS_ID = "regions"
+
+
+def _slug(name: str) -> str:
+    """A filename for a Japanese category name. Keeps the name, drops what a
+    path cannot hold."""
+    return re.sub(r"[\s/\\?#\[\]]+", "-", name).strip("-")
+
+def build_category_catalog(name: str, members, base_url: str = "") -> dict:
+    """The datasets on one shelf.
+
+    The page's own grouping -- 施設, 交通, 災害・防災 and eleven more. An agent
+    asked for exactly this after finding regions/ and licenses/ and no way to
+    ask "what is there about buses".
+    """
+    members = list(members)
+    slug = _slug(name)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": f"category-{slug}",
+        "title": f"{name} — {len(members)} データセット",
+        "description": f"国土数値情報のうち「{name}」に分類されるデータセット。",
+        "ksj:category": name,
+        "links": [
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "./catalog.json", "type": "application/json",
+             "title": "分類別 (by category)"},
+            {
+                "rel": "self",
+                "href": f"{base_url}/categories/{slug}.json" if base_url else f"./{slug}.json",
+                "type": "application/json",
+            },
+        ]
+        + [
+            {
+                "rel": "child",
+                "href": f"../collections/{m['id']}/collection.json",
+                "type": "application/json",
+                "title": f"{m['title']} — {m['count']} 件",
+            }
+            for m in members
+        ],
+    }
+
+
+def build_categories_root(categories, base_url: str = "") -> dict:
+    categories = list(categories)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": "categories",
+        "title": "分類別 (by category)",
+        "description": (
+            "国土数値情報ダウンロードサイトが一覧ページで使っている分類。"
+            "「バスのデータはどれか」のような主題からの問いに答えるための軸です。"
+        ),
+        "links": [
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {
+                "rel": "self",
+                "href": f"{base_url}/categories/catalog.json" if base_url else "./catalog.json",
+                "type": "application/json",
+            },
+        ]
+        + [
+            {
+                "rel": "child",
+                "href": f"./{_slug(c['name'])}.json",
+                "type": "application/json",
+                "title": f"{c['name']} — {c['count']} データセット",
+            }
+            for c in categories
+        ],
+    }
+
 
 REDISTRIBUTION = {
     "allowed": (
@@ -647,6 +754,7 @@ def build_root(
     base_url: str = "",
     regions: bool = False,
     licenses: bool = False,
+    categories: bool = False,
 ) -> dict:
     return {
         "type": "Catalog",
@@ -712,6 +820,18 @@ def build_root(
                 }
             ]
             if licenses
+            else []
+        )
+        + (
+            [
+                {
+                    "rel": "child",
+                    "href": "./categories/catalog.json",
+                    "type": "application/json",
+                    "title": "分類別 (by category)",
+                }
+            ]
+            if categories
             else []
         )
         ,

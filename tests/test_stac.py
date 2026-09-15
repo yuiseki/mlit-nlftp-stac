@@ -250,3 +250,23 @@ def test_terms_that_were_never_stated_are_absent_rather_than_empty():
     it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "P05", None, "other", "")
     assert "ksj:terms" not in it["properties"]
     assert it["properties"]["ksj:redistribution"] == "check"
+
+
+def test_the_distribution_format_comes_from_the_filename():
+    # The page's own 形式 column is absent for three quarters of the files and
+    # spells itself four ways where it is present.
+    from mlit_nlftp_stac.stac import file_format_of
+
+    assert file_format_of("P11-22_32_SHP.zip") == "Shapefile"
+    assert file_format_of("500m_mesh_2024_32_GEOJSON.zip") == "GeoJSON"
+    assert file_format_of("A40-16_39_GML.zip") == "GML"
+    assert file_format_of("P30-13.zip") is None
+
+
+def test_an_item_carries_the_datasets_real_crs_not_just_世界測地系():
+    row = _row("https://x/A40-16_39_GML.zip", "a.zip")
+    row["cells"] = {"地域": "高知", "測地系": "世界測地系"}
+    it = build_item(row, PAGE, "A40", None, "other", "", "", "", "A40", None,
+                    "JGD2011 / （B, L）")
+    assert it["properties"]["ksj:crs"] == "世界測地系"
+    assert it["properties"]["ksj:coordinate_system"] == "JGD2011 / （B, L）"
