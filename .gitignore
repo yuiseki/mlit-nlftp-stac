@@ -1,0 +1,11 @@
+# Generated. `make index` rebuilds it from nlftp in about 5 minutes.
+data/links.jsonl
+data/head.jsonl
+
+# The catalog itself is a build artifact. `make build` rebuilds it from
+# data/. Publishing copies it to static hosting; git is not the transport.
+catalog/
+
+__pycache__/
+.venv/
+tmp/
