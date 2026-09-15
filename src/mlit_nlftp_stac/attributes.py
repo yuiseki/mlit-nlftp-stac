@@ -18,6 +18,7 @@ from urllib.parse import urljoin
 
 BASE = "https://nlftp.mlit.go.jp/ksj/gml/datalist/"
 
+_COMMENT = re.compile(r"<!--.*?-->", re.S)
 _ROW = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S | re.I)
 _CELL = re.compile(r"<t([dh])[^>]*>(.*?)</t\1>", re.S | re.I)
 _HREF = re.compile(r'href="([^"]+)"')
@@ -26,7 +27,12 @@ _BR = re.compile(r"<br\s*/?>", re.I)
 
 # 鉄道区分（N02_001） / 500m_mesh（MESH_ID） — the parenthesised part is the
 # name the data actually uses, which is the one a query has to spell.
-_COLUMN = re.compile(r"^(.*?)[（(]\s*([A-Za-z][A-Za-z0-9_]*)\s*[)）]\s*$", re.S)
+# 鉄道区分（N02_001）, and the repeated-column form バス区分コード（P11_004_01～35）,
+# which names 35 columns at once. Dropping the latter as unparseable lost the
+# two columns P11 exists for.
+_COLUMN = re.compile(
+    r"^(.*?)[（(]\s*([A-Za-z][A-Za-z0-9_]*(?:\s*[～~〜-]\s*\d+)?)\s*[)）]\s*$", re.S
+)
 _SHAPEFILE = re.compile(r"[（(]\s*([^（）()]+\.shp)\s*[)）]", re.I)
 _CODELIST = re.compile(r"コードリスト[「『](.+?)[」』]")
 
@@ -63,6 +69,12 @@ def parse_attributes(page_html: str, page_url: str = BASE) -> List[Dict]:
     RailroadSection and Station -- so one flat list for the dataset would
     describe neither.
     """
+    # Superseded tables are left in the page as comments rather than deleted.
+    # P11 keeps its pre-2022 schema that way, in which P11_002 means バス事業者名
+    # instead of バス区分, and reading it produced a second variant that
+    # contradicted the real one with no way to tell which was current.
+    page_html = _COMMENT.sub("", page_html)
+
     variants: List[Dict] = []
     current: Optional[Dict] = None
 

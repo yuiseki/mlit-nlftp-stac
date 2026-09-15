@@ -25,8 +25,16 @@ urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "you"}
 | what you may republish | `licenses/allowed/catalog.json` |
 | one dataset in detail | `collections/<id>/collection.json` |
 
-`collections/catalog.json` lists all 110 datasets by Japanese name in one
-request. Start there if you are choosing a dataset by reading.
+`collections/index.json` (32 KB) is every dataset with its **description**,
+category, keywords, latest year and item count. Start there when you are
+choosing by what a dataset contains rather than by its name: the word that
+tells 津波浸水想定 from 高潮浸水想定 is in the description, not the title.
+`collections/catalog.json` is the same 110 datasets as links only.
+
+```bash
+curl -s .../collections/index.json \
+  | jq -r '.collections[] | select(.description | test("津波")) | "\(.id) \(.title)"'
+```
 
 **Do not scan 110 collections.** Every question of the form "which files
 cover X" or "which files are Y" is one query against `items.parquet`:
@@ -73,6 +81,23 @@ Many datasets publish the same year in several formats. `ksj:format` says
 which; GML, シェープ形式 and GeoJSON形式 are the usual three, and some zips
 contain two at once ("シェープ、geojson形式").
 
+## Combining datasets
+
+Nothing in the catalog links one dataset to another by use, so these are worth
+knowing:
+
+- 浸水想定 (A31a 洪水, A40 津波, A49 高潮, A51 内水) against facilities
+  (P04 医療機関, P29 学校, P11 バス停留所). Note that 避難施設 (P20) is 非商用
+  and cannot be redistributed, so a published map cannot carry its points.
+- Population (mesh500r6 and its siblings) against anything reachable on foot.
+  The mesh is 500 m; bus-stop catchments are 300 to 500 m.
+- 駅別乗降客数 (S12) joins to 鉄道 (N02) by station name and operator.
+
+Editions of the same dataset **are** linked: a Collection in a series carries
+`ksj:series` and `rel: related` links to its other editions, with each one's
+latest year in the link title. The seven population meshes are three series of
+one resolution each.
+
 ## Before you redistribute anything
 
 The licence belongs to the **year**, not to the dataset. 鉄道データ is CC BY 4.0
@@ -116,10 +141,15 @@ curl -s .../codelists/RailwayClassCd.json | jq '.values[] | select(.value=="13")
 # {"value":"13","label":"鋼索鉄道","description":"車両にロープを緊結して…"}
 ```
 
-A dataset can have more than one variant, and the page does not always say
-which vintage each belongs to: P11 has two tables in which `P11_002` is
-バス事業者名 in one and バス区分 in the other, and neither names a shapefile.
-When two variants disagree about a column, open the file to see which you got.
+A dataset can have more than one variant when its zip holds several
+shapefiles; N02 ships RailroadSection.shp and Station.shp with different
+columns.
+
+Only the current schema is listed. Superseded tables are left on the upstream
+page as HTML comments, and reading them once made this catalog advertise
+columns the data does not have: N07 バスルート was published here with
+平日運行頻度 and 土曜日運行頻度, which exist in the pre-2022 schema and not in
+the 2022 files anyone would download.
 
 `table:columns` is also emitted, but only for the 80 datasets that ship a
 single shapefile. 105 of 110 datasets have schemas; five state none upstream.

@@ -675,6 +675,9 @@ def build_root(
             # this catalog never saw it.
             {"rel": "agents", "href": "./AGENTS.md", "type": "text/markdown",
              "title": "AGENTS.md — how to get an answer out of this catalog"},
+            {"rel": "alternate", "href": "./collections/index.json",
+             "type": "application/json",
+             "title": "collections/index.json — 全 Collection の説明文つき一覧"},
             # The same Items as one table, for the question a tree cannot
             # answer: everything matching a filter, across all 110 datasets.
             {"rel": "alternate", "href": "./items.parquet",

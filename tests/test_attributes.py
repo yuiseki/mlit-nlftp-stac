@@ -112,3 +112,41 @@ def test_a_row_indented_by_a_spanned_cell_is_still_a_column():
     # the numbering and a column in the data that the catalog could not name.
     cols = [c["column"] for c in parse_attributes(SPANNED)[0]["columns"]]
     assert cols == ["P20_006", "P20_007"]
+
+
+COMMENTED = """<html><body><table>
+<tr><th rowspan="2">属性情報</th><th>属性名<br>（かっこ内はshp属性名）</th><th>説明</th><th>属性の型</th></tr>
+<tr><td>バス区分（P11_002）</td><td>運行形態による区分</td><td>コードリスト「バス区分コード」</td></tr>
+</table>
+<!--
+<table>
+<tr><th rowspan="2">属性情報</th><th>属性名<br>（かっこ内はshp属性名）</th><th>説明</th><th>属性の型</th></tr>
+<tr><td>バス事業者名（P11_002）</td><td>事業者の名称</td><td>文字列型</td></tr>
+</table>
+-->
+</body></html>"""
+
+
+def test_a_superseded_table_left_in_a_comment_is_not_a_variant():
+    # P11 keeps its pre-2022 schema commented out, in which P11_002 means
+    # バス事業者名 rather than バス区分. Reading it produced two variants that
+    # contradicted each other with nothing to say which was current.
+    variants = parse_attributes(COMMENTED)
+    assert len(variants) == 1
+    assert variants[0]["columns"][0]["name"] == "バス区分"
+
+
+RANGE = """<html><body><table>
+<tr><th rowspan="3">属性情報</th><th>属性名<br>（かっこ内はshp属性名）</th><th>説明</th><th>属性の型</th></tr>
+<tr><td>バス系統（P11_003_01～35）</td><td>系統番号</td><td>文字列型</td></tr>
+<tr><td>バス区分コード（P11_004_01～35）</td><td>運行形態による区分</td><td>コードリスト「バス区分コード」</td></tr>
+</table></body></html>"""
+
+
+def test_a_column_that_repeats_35_times_is_still_a_column():
+    # P11 writes バス区分コード（P11_004_01～35）, naming 35 columns in one row.
+    # Skipping it as unparseable dropped the two columns the dataset exists
+    # for: the route number and the service class.
+    cols = {c["column"]: c for c in parse_attributes(RANGE)[0]["columns"]}
+    assert set(cols) == {"P11_003_01～35", "P11_004_01～35"}
+    assert cols["P11_004_01～35"]["type"] == "codelist"

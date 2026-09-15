@@ -247,6 +247,63 @@ def main() -> int:
     if slugs:
         print(f"{len(slugs)} code lists -> {out / 'codelists'}")
 
+    # Editions of the same thing, linked to each other. Derived from the
+    # titles, which is where the difference is written: 500mメッシュ別将来推計
+    # 人口データ exists as （H29国政局推計）, （H30国政局推計） and （R6国政局推計）
+    # and nothing else says they are the same series.
+    import re as _re
+
+    def series_of(title: str) -> str:
+        base = title.rsplit(" (", 1)[0]
+        base = _re.sub(r"（[^（）]*推計[^（）]*）", "", base)
+        return _re.sub(r"（shape形式版）", "", base).strip()
+
+    series: dict = {}
+    for c in collections:
+        series.setdefault(series_of(c["title"]), []).append(c)
+    for name, members in series.items():
+        if len(members) < 2:
+            continue
+        for c in members:
+            c["ksj:series"] = name
+            c["links"] += [
+                {
+                    "rel": "related",
+                    "href": f"../{o['id']}/collection.json",
+                    "type": "application/json",
+                    "title": f"同じ系列: {o['title']}"
+                             + (f" — 最新 {o['ksj:latest_year']}" if o.get("ksj:latest_year") else ""),
+                }
+                for o in members
+                if o["id"] != c["id"]
+            ]
+            write_json(out / "collections" / c["id"] / "collection.json", c)
+    if series:
+        n = sum(len(m) for m in series.values() if len(m) > 1)
+        print(f"{n} collections belong to a series of {sum(1 for m in series.values() if len(m) > 1)}")
+
+    # A small index for choosing a dataset by reading. collections/catalog.json
+    # is links only, and a description is what tells 津波浸水想定 from 高潮浸水
+    # 想定; fetching 110 collection.json files to read them is the scan this
+    # catalog exists to avoid.
+    write_json(out / "collections" / "index.json", {
+        "description": "全 Collection の説明文つき一覧。語句で選ぶための索引です。",
+        "collections": [
+            {
+                "id": c["id"],
+                "title": c["title"],
+                "description": c.get("description", ""),
+                "category": c.get("ksj:category"),
+                "keywords": c.get("keywords", []),
+                "latest_year": c.get("ksj:latest_year"),
+                "items": sum(1 for x in c["links"] if x["rel"] == "item"),
+                "license": c["license"],
+                "series": c.get("ksj:series"),
+            }
+            for c in collections
+        ],
+    })
+
     write_json(out / "collections" / "catalog.json",
                build_collections_root(collections, base_url))
     write_json(
