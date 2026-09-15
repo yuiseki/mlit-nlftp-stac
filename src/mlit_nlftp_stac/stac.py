@@ -20,6 +20,7 @@ from .terms import resolve as resolve_terms
 STAC_VERSION = "1.1.0"
 ROOT_TITLE = "国土数値情報 (MLIT National Land Numerical Information)"
 FILE_EXT = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
+TABLE_EXT = "https://stac-extensions.github.io/table/v1.2.0/schema.json"
 
 # Last resort only, for a Collection with no Item extent and no
 # data/region_bbox.json to fall back on. The real value comes from N03's own
@@ -203,6 +204,26 @@ def build_item(
     return item
 
 
+def _table_column(col: dict) -> dict:
+    """One entry of `table:columns`.
+
+    `name` is the name a query has to spell, which is `N02_001` and not
+    鉄道区分; the readable name goes in the description, where a person and an
+    agent both still see it. A coded column is a string in the shapefile, so
+    that is its type here; which code list it uses is in `ksj:variants`.
+    """
+    readable = col.get("name") or ""
+    desc = col.get("description") or ""
+    parts = [p for p in (readable, desc) if p]
+    if col.get("codelist"):
+        parts.append(f"コードリスト「{col['codelist']}」")
+    return {
+        "name": col["column"],
+        "description": " / ".join(parts),
+        "type": "string" if col["type"] in ("codelist", "unknown") else col["type"],
+    }
+
+
 # Rows of the page's own table that say something a catalogue user wants and
 # that fit in a field. The rest stays on the page.
 _EXTRA_FIELDS = {
@@ -230,6 +251,7 @@ def build_collection(
     """
     page = page or {}
     title = page.get("title") or collection_id
+    variants = page.get("variants") or []
     description = page.get("description") or ""
     terms = page.get("terms") or ""
     items = list(items)
@@ -256,6 +278,7 @@ def build_collection(
     return {
         "type": "Collection",
         "stac_version": STAC_VERSION,
+        **({"stac_extensions": [TABLE_EXT]} if len(variants) == 1 else {}),
         "id": collection_id,
         "title": f"{title} ({collection_id})",
         "description": description or (
@@ -268,6 +291,18 @@ def build_collection(
         "license": spdx_from_terms(terms),
         "providers": [MLIT],
         "keywords": [k for k in ("国土数値情報", page.get("identifier") or collection_id) if k],
+        # What the columns are called and what their coded values mean. Two
+        # agents could find the right dataset here and not plan the work,
+        # because this was the one thing only the upstream page had.
+        **({"ksj:variants": variants} if variants else {}),
+        # The standard field, but only when it can be right: a dataset that
+        # ships several shapefiles has several schemas, and one flat list
+        # would describe none of them.
+        **(
+            {"table:columns": [_table_column(c) for c in variants[0]["columns"]]}
+            if len(variants) == 1
+            else {}
+        ),
         "extent": {
             "spatial": {"bbox": spatial},
             "temporal": {"interval": [[years[0] if years else None, years[-1] if years else None]]},

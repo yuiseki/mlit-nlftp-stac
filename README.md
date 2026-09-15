@@ -75,12 +75,26 @@ answering it from Collections alone meant opening all 110.
 | `start_datetime` / `end_datetime` | from the page's 年度 column, not guessed from the filename |
 | `properties.ksj:declared_size` | what the page claims, which is not always what the file weighs |
 
+And a Collection carries `ksj:variants`: one entry per shapefile in the zip,
+each with its columns, the name a query has to spell (`N02_001`), the readable
+name (鉄道区分), a description, and for a coded column a link to the code list.
+`table:columns` is emitted too, but only for the 80 datasets that ship a single
+shapefile, because a dataset with two schemas cannot honestly have one.
+
+```bash
+curl -s https://stac.yuiseki.net/mlit-nlftp/codelists/RailwayClassCd.json | jq '.values[1]'
+# { "value": "13", "label": "鋼索鉄道",
+#   "description": "車両にロープを緊結して山上の巻上機により巻上げて運転する…" }
+```
+
 ## What it does not tell you
 
 Worth knowing before you plan work around it:
 
-- **No attribute schemas.** Which column holds バス区分, which years a
-  population projection has as fields: not here. Follow `ksj:source_page`.
+- **Attribute schemas cover 105 of 110 datasets**, 1,565 columns across 153
+  shapefiles, with 117 code lists and 46,040 coded values beside them. The
+  five without are datasets whose page states no 属性情報 table. Nine code
+  lists are spreadsheets rather than pages and are not read.
 - **No search.** A static catalog has no `/search`. The region index covers
   the common case; anything else means reading `catalog.json` and choosing.
 - **Footprints are administrative, not measured.** A prefecture file gets the

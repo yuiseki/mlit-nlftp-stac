@@ -11,6 +11,8 @@ import html as _html
 import re
 from typing import Dict, Optional
 
+from .attributes import parse_attributes
+
 _ROW = re.compile(r"<tr>\s*<th[^>]*>(.*?)</th>\s*<td[^>]*>(.*?)</td>\s*</tr>", re.S)
 # Pages written before the <th> layout put the key in a bold <td> instead.
 _ROW_OLD = re.compile(
@@ -22,8 +24,11 @@ _BR = re.compile(r"<br\s*/?>", re.I)
 _TAG = re.compile(r"<[^>]+>")
 
 # The one row that is not prose: a diagram-laden schema table that runs to
-# thousands of characters and is better read on the page itself.
+# thousands of characters. Its 属性情報 tables are read by `parse_attributes`
+# instead of being kept as text.
 _SKIP = "データ構造"
+
+ATTRS_BASE = "https://nlftp.mlit.go.jp/ksj/gml/datalist/"
 
 
 def _text(fragment: str) -> str:
@@ -36,7 +41,7 @@ def _text(fragment: str) -> str:
     return "\n".join(line.strip() for line in s.splitlines()).strip()
 
 
-def parse_page(page_html: str) -> Dict:
+def parse_page(page_html: str, page_url: str = "") -> Dict:
     fields = {}
     for raw_key, raw_val in _ROW.findall(page_html) + _ROW_OLD.findall(page_html):
         key = _text(raw_key)
@@ -58,6 +63,9 @@ def parse_page(page_html: str) -> Dict:
         "identifier": fields.get("識別子", ""),
         "terms": fields.get("このデータの使用許諾条件", ""),
         "fields": fields,
+        # The 属性情報 tables live inside the データ構造 cell that `fields`
+        # deliberately skips, so they are read from the whole page instead.
+        "variants": parse_attributes(page_html, page_url or ATTRS_BASE),
     }
 
 

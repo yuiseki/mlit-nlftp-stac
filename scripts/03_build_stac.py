@@ -92,6 +92,12 @@ def main() -> int:
         return 1
     head = {r["url"]: r for r in load(DATA / "head.jsonl") if r.get("status") == 200}
     pages = _pages_by_collection(load(DATA / "pages.jsonl"))
+    codelists = {}
+    cl_path = DATA / "codelists.json"
+    if cl_path.exists():
+        codelists = json.loads(cl_path.read_text())
+        print(f"{len(codelists)} code lists, "
+              f"{sum(len(v) for v in codelists.values())} values")
     regions = {}
     region_file = DATA / "region_bbox.json"
     if region_file.exists():
@@ -132,6 +138,12 @@ def main() -> int:
         for it in items:
             write_json(out / "collections" / cid / "items" / f"{it['id']}.json", it)
         coll = build_collection(cid, page_url, items, page, regions, base_url)
+        for v in coll.get("ksj:variants") or []:
+            for c in v["columns"]:
+                url = c.get("codelist_url")
+                if url and url in codelists:
+                    slug = url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+                    c["ksj:codelist_href"] = f"../../codelists/{slug}.json"
         write_json(out / "collections" / cid / "collection.json", coll)
         (out / "collections" / cid / "README.md").write_text(
             f"# {coll['title']}\n\n{coll['description']}\n\n"
@@ -206,6 +218,18 @@ def main() -> int:
               f"{sum(r['count'] for r in rows):>6} 件 / {len(rows)} コレクション")
     if status_index:
         write_json(out / "licenses" / "catalog.json", build_licenses_root(status_index, base_url))
+
+    # One file per code list, referenced from the columns that use it. Kept
+    # out of the collections so that a dataset using RiverCodeCd does not
+    # carry its 35,450 rows.
+    slugs = {}
+    for url, values in sorted(codelists.items()):
+        slug = url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        slugs[url] = slug
+        write_json(out / "codelists" / f"{slug}.json",
+                   {"source": url, "values": values})
+    if slugs:
+        print(f"{len(slugs)} code lists -> {out / 'codelists'}")
 
     write_json(out / "collections" / "catalog.json",
                build_collections_root(collections, base_url))

@@ -140,6 +140,35 @@ does not: they see a title, a map and a download button. So each Item repeats
 its Collection's `license` and `ksj:terms`, and carries a `license` link of its
 own. Nine of 135 pages state no terms at all; those Items still have the link.
 
+## The columns, and what their values mean
+
+Two agents were given a research question and this catalog. Both found the
+right dataset, and both said the same thing about what stopped them next:
+nothing here said which column held バス区分, or what the value 13 meant, so
+the only way to plan the work was to open the MLIT page.
+
+The page has it. Each dataset states its columns in a 属性情報 table -- the
+readable name, the name the shapefile actually uses, a description, and either
+a type or a link to a code list -- and each code list is a table of value,
+label and definition. `attributes.py` reads both. 105 of 110 datasets, 1,565
+columns over 153 shapefiles, 117 code lists, 46,040 values.
+
+Three decisions worth stating:
+
+**A dataset can have several schemas.** N02 ships RailroadSection.shp and
+Station.shp with different columns. `ksj:variants` is a list, one per
+shapefile. `table:columns`, which is flat, is emitted only for the 80 datasets
+that ship one shapefile; for the others it would describe none of them.
+
+**`name` is the name a query has to spell.** That is `N02_001`, not 鉄道区分.
+The readable name goes in the description, where both a person and an agent
+still see it.
+
+**Code lists are files, not fields.** RiverCodeCd has 35,450 values. Inlining
+it into every dataset that references a river would be absurd, so each list is
+`codelists/<name>.json` and a column points at it. Nine lists are spreadsheets
+rather than pages; those are left unread rather than guessed at.
+
 ## A licence belongs to a year
 
 The terms of use (agreement_02.html, 第1条) define the two labels that matter:

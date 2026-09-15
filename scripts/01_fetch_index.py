@@ -57,7 +57,7 @@ def main() -> int:
             except Exception as e:  # a page listed in the index may still 404
                 failed.append((page, str(e)[:80]))
                 continue
-            meta = parse_page(html)
+            meta = parse_page(html, url)
             fp.write(json.dumps({"page": page, "page_url": url, **meta}, ensure_ascii=False) + "\n")
 
             rows = parse_download_rows(html)
