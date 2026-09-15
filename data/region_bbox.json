@@ -1,0 +1,735 @@
+{
+  "note": "Extents read from the shapefile headers inside 国土数値情報 N03 行政区域.",
+  "source_page": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html",
+  "generated": "2026-09-15T06:34:12Z",
+  "regions": {
+    "全国": {
+      "region": "全国",
+      "code": null,
+      "bbox": [
+        122.932606,
+        20.422746,
+        153.986675,
+        45.557243
+      ],
+      "source_file": "N03-20260101_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_GML.zip",
+      "shapefile": "N03-20260101.shp"
+    },
+    "北海道": {
+      "region": "北海道",
+      "code": "01",
+      "bbox": [
+        139.33396,
+        41.351646,
+        148.894403,
+        45.557243
+      ],
+      "source_file": "N03-20260101_01_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_01_GML.zip",
+      "shapefile": "N03-20260101_01.shp"
+    },
+    "東北地方": {
+      "region": "東北地方",
+      "code": "52",
+      "bbox": [
+        139.164753,
+        36.791315,
+        142.072481,
+        41.556168
+      ],
+      "source_file": "N03-20260101_52_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_52_GML.zip",
+      "shapefile": "N03-20260101_52.shp"
+    },
+    "青森": {
+      "region": "青森",
+      "code": "02",
+      "bbox": [
+        139.497419,
+        40.217707,
+        141.682866,
+        41.556168
+      ],
+      "source_file": "N03-20260101_02_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_02_GML.zip",
+      "shapefile": "N03-20260101_02.shp"
+    },
+    "岩手": {
+      "region": "岩手",
+      "code": "03",
+      "bbox": [
+        140.653125,
+        38.747651,
+        142.072481,
+        40.450256
+      ],
+      "source_file": "N03-20260101_03_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_03_GML.zip",
+      "shapefile": "N03-20260101_03.shp"
+    },
+    "宮城": {
+      "region": "宮城",
+      "code": "04",
+      "bbox": [
+        140.274889,
+        37.773248,
+        141.677284,
+        39.002762
+      ],
+      "source_file": "N03-20260101_04_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_04_GML.zip",
+      "shapefile": "N03-20260101_04.shp"
+    },
+    "秋田": {
+      "region": "秋田",
+      "code": "05",
+      "bbox": [
+        139.691705,
+        38.873013,
+        140.995432,
+        40.511117
+      ],
+      "source_file": "N03-20260101_05_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_05_GML.zip",
+      "shapefile": "N03-20260101_05.shp"
+    },
+    "山形": {
+      "region": "山形",
+      "code": "06",
+      "bbox": [
+        139.520018,
+        37.733827,
+        140.646495,
+        39.215507
+      ],
+      "source_file": "N03-20260101_06_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_06_GML.zip",
+      "shapefile": "N03-20260101_06.shp"
+    },
+    "福島": {
+      "region": "福島",
+      "code": "07",
+      "bbox": [
+        139.164753,
+        36.791315,
+        141.046112,
+        37.976644
+      ],
+      "source_file": "N03-20260101_07_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_07_GML.zip",
+      "shapefile": "N03-20260101_07.shp"
+    },
+    "関東地方": {
+      "region": "関東地方",
+      "code": "53",
+      "bbox": [
+        136.06952,
+        20.422746,
+        153.986675,
+        37.155062
+      ],
+      "source_file": "N03-20260101_53_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_53_GML.zip",
+      "shapefile": "N03-20260101_53.shp"
+    },
+    "茨城": {
+      "region": "茨城",
+      "code": "08",
+      "bbox": [
+        139.687697,
+        35.739136,
+        140.851974,
+        36.945299
+      ],
+      "source_file": "N03-20260101_08_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_08_GML.zip",
+      "shapefile": "N03-20260101_08.shp"
+    },
+    "栃木": {
+      "region": "栃木",
+      "code": "09",
+      "bbox": [
+        139.326566,
+        36.199681,
+        140.29226,
+        37.155062
+      ],
+      "source_file": "N03-20260101_09_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_09_GML.zip",
+      "shapefile": "N03-20260101_09.shp"
+    },
+    "群馬": {
+      "region": "群馬",
+      "code": "10",
+      "bbox": [
+        138.397026,
+        35.985333,
+        139.66995,
+        37.058626
+      ],
+      "source_file": "N03-20260101_10_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_10_GML.zip",
+      "shapefile": "N03-20260101_10.shp"
+    },
+    "埼玉": {
+      "region": "埼玉",
+      "code": "11",
+      "bbox": [
+        138.71136,
+        35.753384,
+        139.900339,
+        36.283411
+      ],
+      "source_file": "N03-20260101_11_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_11_GML.zip",
+      "shapefile": "N03-20260101_11.shp"
+    },
+    "千葉": {
+      "region": "千葉",
+      "code": "12",
+      "bbox": [
+        139.739526,
+        34.897974,
+        140.88162,
+        36.1041
+      ],
+      "source_file": "N03-20260101_12_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_12_GML.zip",
+      "shapefile": "N03-20260101_12.shp"
+    },
+    "東京": {
+      "region": "東京",
+      "code": "13",
+      "bbox": [
+        136.06952,
+        20.422746,
+        153.986675,
+        35.898424
+      ],
+      "source_file": "N03-20260101_13_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_13_GML.zip",
+      "shapefile": "N03-20260101_13.shp"
+    },
+    "神奈川": {
+      "region": "神奈川",
+      "code": "14",
+      "bbox": [
+        138.915768,
+        35.128492,
+        139.835841,
+        35.672897
+      ],
+      "source_file": "N03-20260101_14_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_14_GML.zip",
+      "shapefile": "N03-20260101_14.shp"
+    },
+    "甲信越・北陸地方": {
+      "region": "甲信越・北陸地方",
+      "code": "54",
+      "bbox": [
+        135.449339,
+        35.168384,
+        139.899905,
+        38.553583
+      ],
+      "source_file": "N03-20260101_54_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_54_GML.zip",
+      "shapefile": "N03-20260101_54.shp"
+    },
+    "新潟": {
+      "region": "新潟",
+      "code": "15",
+      "bbox": [
+        137.634984,
+        36.736529,
+        139.899905,
+        38.553583
+      ],
+      "source_file": "N03-20260101_15_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_15_GML.zip",
+      "shapefile": "N03-20260101_15.shp"
+    },
+    "富山": {
+      "region": "富山",
+      "code": "16",
+      "bbox": [
+        136.768356,
+        36.274364,
+        137.763386,
+        36.982624
+      ],
+      "source_file": "N03-20260101_16_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_16_GML.zip",
+      "shapefile": "N03-20260101_16.shp"
+    },
+    "石川": {
+      "region": "石川",
+      "code": "17",
+      "bbox": [
+        136.242005,
+        36.067228,
+        137.363403,
+        37.857915
+      ],
+      "source_file": "N03-20260101_17_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_17_GML.zip",
+      "shapefile": "N03-20260101_17.shp"
+    },
+    "福井": {
+      "region": "福井",
+      "code": "18",
+      "bbox": [
+        135.449339,
+        35.343678,
+        136.832363,
+        36.296839
+      ],
+      "source_file": "N03-20260101_18_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_18_GML.zip",
+      "shapefile": "N03-20260101_18.shp"
+    },
+    "山梨": {
+      "region": "山梨",
+      "code": "19",
+      "bbox": [
+        138.180089,
+        35.168384,
+        139.134414,
+        35.971708
+      ],
+      "source_file": "N03-20260101_19_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_19_GML.zip",
+      "shapefile": "N03-20260101_19.shp"
+    },
+    "長野": {
+      "region": "長野",
+      "code": "20",
+      "bbox": [
+        137.324552,
+        35.198366,
+        138.739254,
+        37.030423
+      ],
+      "source_file": "N03-20260101_20_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_20_GML.zip",
+      "shapefile": "N03-20260101_20.shp"
+    },
+    "東海地方": {
+      "region": "東海地方",
+      "code": "55",
+      "bbox": [
+        135.853184,
+        33.722858,
+        139.176559,
+        36.465065
+      ],
+      "source_file": "N03-20260101_55_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_55_GML.zip",
+      "shapefile": "N03-20260101_55.shp"
+    },
+    "岐阜": {
+      "region": "岐阜",
+      "code": "21",
+      "bbox": [
+        136.276217,
+        35.133729,
+        137.653057,
+        36.465065
+      ],
+      "source_file": "N03-20260101_21_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_21_GML.zip",
+      "shapefile": "N03-20260101_21.shp"
+    },
+    "静岡": {
+      "region": "静岡",
+      "code": "22",
+      "bbox": [
+        137.474107,
+        34.572136,
+        139.176559,
+        35.645957
+      ],
+      "source_file": "N03-20260101_22_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_22_GML.zip",
+      "shapefile": "N03-20260101_22.shp"
+    },
+    "愛知": {
+      "region": "愛知",
+      "code": "23",
+      "bbox": [
+        136.671033,
+        34.57354,
+        137.838116,
+        35.424788
+      ],
+      "source_file": "N03-20260101_23_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_23_GML.zip",
+      "shapefile": "N03-20260101_23.shp"
+    },
+    "三重": {
+      "region": "三重",
+      "code": "24",
+      "bbox": [
+        135.853184,
+        33.722858,
+        136.990084,
+        35.257648
+      ],
+      "source_file": "N03-20260101_24_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_24_GML.zip",
+      "shapefile": "N03-20260101_24.shp"
+    },
+    "近畿地方": {
+      "region": "近畿地方",
+      "code": "56",
+      "bbox": [
+        134.252738,
+        33.432599,
+        136.455038,
+        35.779258
+      ],
+      "source_file": "N03-20260101_56_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_56_GML.zip",
+      "shapefile": "N03-20260101_56.shp"
+    },
+    "滋賀": {
+      "region": "滋賀",
+      "code": "25",
+      "bbox": [
+        135.763732,
+        34.790571,
+        136.455038,
+        35.703737
+      ],
+      "source_file": "N03-20260101_25_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_25_GML.zip",
+      "shapefile": "N03-20260101_25.shp"
+    },
+    "京都": {
+      "region": "京都",
+      "code": "26",
+      "bbox": [
+        134.853727,
+        34.705754,
+        136.055476,
+        35.779258
+      ],
+      "source_file": "N03-20260101_26_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_26_GML.zip",
+      "shapefile": "N03-20260101_26.shp"
+    },
+    "大阪": {
+      "region": "大阪",
+      "code": "27",
+      "bbox": [
+        135.091298,
+        34.271821,
+        135.746603,
+        35.051293
+      ],
+      "source_file": "N03-20260101_27_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_27_GML.zip",
+      "shapefile": "N03-20260101_27.shp"
+    },
+    "兵庫": {
+      "region": "兵庫",
+      "code": "28",
+      "bbox": [
+        134.252738,
+        34.155155,
+        135.468594,
+        35.674823
+      ],
+      "source_file": "N03-20260101_28_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_28_GML.zip",
+      "shapefile": "N03-20260101_28.shp"
+    },
+    "奈良": {
+      "region": "奈良",
+      "code": "29",
+      "bbox": [
+        135.539682,
+        33.858956,
+        136.229864,
+        34.781356
+      ],
+      "source_file": "N03-20260101_29_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_29_GML.zip",
+      "shapefile": "N03-20260101_29.shp"
+    },
+    "和歌山": {
+      "region": "和歌山",
+      "code": "30",
+      "bbox": [
+        134.998545,
+        33.432599,
+        136.013472,
+        34.384482
+      ],
+      "source_file": "N03-20260101_30_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_30_GML.zip",
+      "shapefile": "N03-20260101_30.shp"
+    },
+    "中国地方": {
+      "region": "中国地方",
+      "code": "57",
+      "bbox": [
+        130.774778,
+        33.712669,
+        134.515408,
+        37.247772
+      ],
+      "source_file": "N03-20260101_57_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_57_GML.zip",
+      "shapefile": "N03-20260101_57.shp"
+    },
+    "鳥取": {
+      "region": "鳥取",
+      "code": "31",
+      "bbox": [
+        133.135879,
+        35.057678,
+        134.515408,
+        35.614585
+      ],
+      "source_file": "N03-20260101_31_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_31_GML.zip",
+      "shapefile": "N03-20260101_31.shp"
+    },
+    "島根": {
+      "region": "島根",
+      "code": "32",
+      "bbox": [
+        131.667911,
+        34.302439,
+        133.390663,
+        37.247772
+      ],
+      "source_file": "N03-20260101_32_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_32_GML.zip",
+      "shapefile": "N03-20260101_32.shp"
+    },
+    "岡山": {
+      "region": "岡山",
+      "code": "33",
+      "bbox": [
+        133.266793,
+        34.298403,
+        134.413161,
+        35.3529
+      ],
+      "source_file": "N03-20260101_33_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_33_GML.zip",
+      "shapefile": "N03-20260101_33.shp"
+    },
+    "広島": {
+      "region": "広島",
+      "code": "34",
+      "bbox": [
+        132.036448,
+        34.027654,
+        133.470642,
+        35.105691
+      ],
+      "source_file": "N03-20260101_34_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_34_GML.zip",
+      "shapefile": "N03-20260101_34.shp"
+    },
+    "山口": {
+      "region": "山口",
+      "code": "35",
+      "bbox": [
+        130.774778,
+        33.712669,
+        132.492188,
+        34.799398
+      ],
+      "source_file": "N03-20260101_35_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_35_GML.zip",
+      "shapefile": "N03-20260101_35.shp"
+    },
+    "四国地方": {
+      "region": "四国地方",
+      "code": "58",
+      "bbox": [
+        132.012309,
+        32.702502,
+        134.822319,
+        34.564849
+      ],
+      "source_file": "N03-20260101_58_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_58_GML.zip",
+      "shapefile": "N03-20260101_58.shp"
+    },
+    "徳島": {
+      "region": "徳島",
+      "code": "36",
+      "bbox": [
+        133.660748,
+        33.538584,
+        134.822319,
+        34.252019
+      ],
+      "source_file": "N03-20260101_36_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_36_GML.zip",
+      "shapefile": "N03-20260101_36.shp"
+    },
+    "香川": {
+      "region": "香川",
+      "code": "37",
+      "bbox": [
+        133.446541,
+        34.012286,
+        134.447486,
+        34.564849
+      ],
+      "source_file": "N03-20260101_37_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_37_GML.zip",
+      "shapefile": "N03-20260101_37.shp"
+    },
+    "愛媛": {
+      "region": "愛媛",
+      "code": "38",
+      "bbox": [
+        132.012309,
+        32.884983,
+        133.692797,
+        34.301654
+      ],
+      "source_file": "N03-20260101_38_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_38_GML.zip",
+      "shapefile": "N03-20260101_38.shp"
+    },
+    "高知": {
+      "region": "高知",
+      "code": "39",
+      "bbox": [
+        132.479688,
+        32.702502,
+        134.314787,
+        33.883363
+      ],
+      "source_file": "N03-20260101_39_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_39_GML.zip",
+      "shapefile": "N03-20260101_39.shp"
+    },
+    "九州地方": {
+      "region": "九州地方",
+      "code": "59",
+      "bbox": [
+        128.10449,
+        27.018678,
+        132.177426,
+        34.728601
+      ],
+      "source_file": "N03-20260101_59_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_59_GML.zip",
+      "shapefile": "N03-20260101_59.shp"
+    },
+    "福岡": {
+      "region": "福岡",
+      "code": "40",
+      "bbox": [
+        129.981449,
+        33.000019,
+        131.190625,
+        34.25024
+      ],
+      "source_file": "N03-20260101_40_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_40_GML.zip",
+      "shapefile": "N03-20260101_40.shp"
+    },
+    "佐賀": {
+      "region": "佐賀",
+      "code": "41",
+      "bbox": [
+        129.736811,
+        32.950485,
+        130.542127,
+        33.618993
+      ],
+      "source_file": "N03-20260101_41_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_41_GML.zip",
+      "shapefile": "N03-20260101_41.shp"
+    },
+    "長崎": {
+      "region": "長崎",
+      "code": "42",
+      "bbox": [
+        128.10449,
+        31.967114,
+        130.390346,
+        34.728601
+      ],
+      "source_file": "N03-20260101_42_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_42_GML.zip",
+      "shapefile": "N03-20260101_42.shp"
+    },
+    "熊本": {
+      "region": "熊本",
+      "code": "43",
+      "bbox": [
+        129.938763,
+        32.09492,
+        131.329505,
+        33.195175
+      ],
+      "source_file": "N03-20260101_43_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_43_GML.zip",
+      "shapefile": "N03-20260101_43.shp"
+    },
+    "大分": {
+      "region": "大分",
+      "code": "44",
+      "bbox": [
+        130.82475,
+        32.714445,
+        132.177426,
+        33.740284
+      ],
+      "source_file": "N03-20260101_44_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_44_GML.zip",
+      "shapefile": "N03-20260101_44.shp"
+    },
+    "宮崎": {
+      "region": "宮崎",
+      "code": "45",
+      "bbox": [
+        130.703377,
+        31.35582,
+        131.885707,
+        32.83898
+      ],
+      "source_file": "N03-20260101_45_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_45_GML.zip",
+      "shapefile": "N03-20260101_45.shp"
+    },
+    "鹿児島": {
+      "region": "鹿児島",
+      "code": "46",
+      "bbox": [
+        128.395367,
+        27.018678,
+        131.205447,
+        32.310599
+      ],
+      "source_file": "N03-20260101_46_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_46_GML.zip",
+      "shapefile": "N03-20260101_46.shp"
+    },
+    "沖縄": {
+      "region": "沖縄",
+      "code": "47",
+      "bbox": [
+        122.932606,
+        24.045616,
+        131.332125,
+        27.885964
+      ],
+      "source_file": "N03-20260101_47_GML.zip",
+      "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_47_GML.zip",
+      "shapefile": "N03-20260101_47.shp"
+    }
+  }
+}

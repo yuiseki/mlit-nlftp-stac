@@ -1,4 +1,6 @@
-from mlit_nlftp_stac.stac import build_item, item_id
+import pytest
+
+from mlit_nlftp_stac.stac import build_collection, build_item, item_id
 
 PAGE = "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A51-2025.html"
 
@@ -38,3 +40,53 @@ def test_a_mesh_named_item_gets_a_real_footprint():
     it = build_item(_row("https://x/A31-22_10_5439_SHP.zip", "A31-22_10_5439_SHP.zip"), PAGE, "A31b")
     assert it["geometry"]["type"] == "Polygon"
     assert it["bbox"][0] == 139.0
+
+
+REGIONS = {
+    "東京": {"region": "東京", "code": "13", "bbox": [136.0695, 20.4227, 153.9867, 35.8984]},
+    "全国": {"region": "全国", "code": None, "bbox": [122.9333, 20.4227, 153.9867, 45.5572]},
+}
+
+
+def test_a_prefecture_file_gets_the_prefectures_extent():
+    row = _row("https://x/N03-20260101_13_GML.zip", "N03-20260101_13_GML.zip")
+    row["cells"] = {"地域": "東京", "年度": "2026年（令和8年）"}
+    it = build_item(row, PAGE, "N03", REGIONS)
+    assert it["bbox"][2] == 153.9867  # 南鳥島 is in Tokyo
+    assert "N03" in it["properties"]["ksj:extent_source"]
+
+
+def test_a_region_with_no_known_extent_stays_without_one():
+    row = _row("https://x/A31a-25_81_10_GML.zip", "A31a-25_81_10_GML.zip")
+    row["cells"] = {"地域": "北海道開発局"}
+    it = build_item(row, PAGE, "A31a", REGIONS)
+    assert it["geometry"] is None
+    assert "bbox" not in it
+    assert "ksj:extent_source" not in it["properties"]
+
+
+def test_a_mesh_code_beats_the_region():
+    row = _row("https://x/A31-22_10_5439_SHP.zip", "A31-22_10_5439_SHP.zip")
+    row["cells"] = {"地域": "全国"}
+    it = build_item(row, PAGE, "A31b", REGIONS)
+    assert it["bbox"][0] == 139.0
+    assert it["properties"]["ksj:extent_source"].startswith("JIS mesh")
+
+
+def test_a_collection_extent_is_the_union_not_a_list_of_every_item():
+    rows = [
+        {**_row("https://x/N03-20260101_13_GML.zip", "a.zip"), "cells": {"地域": "東京"}},
+        {**_row("https://x/A31-22_10_5439_SHP.zip", "b.zip"), "cells": {}},
+    ]
+    items = [build_item(r, PAGE, "X", REGIONS) for r in rows]
+    coll = build_collection("X", PAGE, items, None, REGIONS)
+    assert len(coll["extent"]["spatial"]["bbox"]) == 1
+    assert coll["extent"]["spatial"]["bbox"][0] == pytest.approx(
+        [136.0695, 20.4227, 153.9867, 36.6667], abs=1e-4
+    )
+
+
+def test_a_collection_with_no_item_extent_falls_back_to_the_measured_japan_bbox():
+    row = {**_row("https://x/P29-23_01_GML.zip", "c.zip"), "cells": {"地域": "北海道開発局"}}
+    coll = build_collection("P29", PAGE, [build_item(row, PAGE, "P29", REGIONS)], None, REGIONS)
+    assert coll["extent"]["spatial"]["bbox"][0] == REGIONS["全国"]["bbox"]

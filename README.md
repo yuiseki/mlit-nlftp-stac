@@ -22,12 +22,16 @@ scripts/01_fetch_index.py     nlftp HTML -> data/links.jsonl (URL, declared size
 scripts/02_head_sizes.py      data/links.jsonl -> data/head.jsonl (real bytes, ETag)
 scripts/03_build_stac.py      data/*.jsonl -> catalog/
 scripts/04_validate.py        catalog/ -> pass or fail
+scripts/05_serve.py           serve catalog/ with CORS, for other STAC clients
+scripts/06_browser.sh         browse catalog/ in STAC Browser
+scripts/07_region_bbox.py     N03 行政区域 -> data/region_bbox.json
 
 src/mlit_nlftp_stac/ksj.py    filename -> identifier, year, area (the risky part)
 src/mlit_nlftp_stac/page.py   a dataset page -> its own name, description, terms
 src/mlit_nlftp_stac/table.py  a download row -> the region, river, format, year
 src/mlit_nlftp_stac/stac.py   a parsed row -> a STAC Item
 src/mlit_nlftp_stac/mesh.py   JIS mesh code -> bounding box
+src/mlit_nlftp_stac/shpbbox.py a zip's shapefile extent, read by range request
 
 docs/design.md                what is borrowed from Portolan, and what is not
 ```
@@ -64,6 +68,11 @@ Items are titled with the words in their own row of the download table, so a
 file reads as 全国 2025年（令和7年） or
 北海道開発局 GML形式 洪水予報河川･水位周知河川 2025年（令和7年） rather than
 `N02-25_GML`. 99% of them; the rest sit in malformed upstream rows.
+
+98% of Items carry a footprint, taken either from a mesh code in the filename
+or from the extent of the matching prefecture in N03 行政区域. The remainder
+are published per river-bureau or per metropolitan region, which no
+administrative boundary matches, and are left without one.
 
 Items have one asset, the upstream zip. No format conversion yet.
 

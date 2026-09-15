@@ -52,11 +52,30 @@ conformance itself.
 
 ## Three places where the upstream data fights back
 
-**Footprints.** Only mesh-coded filenames yield a footprint that can be
-computed (`src/mlit_nlftp_stac/mesh.py`). Everything else would need the zip
-opened or a prefecture lookup that the filename does not reliably support, so
-those Items carry `"geometry": null` and no `bbox`. Filling them with a
-nationwide box would make every spatial query match everything.
+**Footprints.** Two sources are real. A mesh code in the filename names the
+exact cell and can be computed (`src/mlit_nlftp_stac/mesh.py`). A file
+published per prefecture covers that prefecture, and 国土数値情報 says how far
+that reaches: N03 行政区域 is in this catalog already, so the extents come from
+the data itself rather than from some other country-boundary dataset.
+
+Reading them is cheap. N03's prefecture archives total about 1 GB, and all
+that is needed from each is the 100-byte header of the shapefile inside, which
+states its own bounding box. The zip's central directory says where that file
+starts, nlftp honours Range requests, and deflate only needs the start of its
+stream, so 1 GB of archives becomes 4 MB of reads
+(`scripts/07_region_bbox.py`, `src/mlit_nlftp_stac/shpbbox.py`). The same pass
+yields the 8 regional aggregates N03 carries as codes 52 to 59, which also
+settles what the two-digit tokens in A46, A47 and A48 filenames are: 地方, not
+prefectures.
+
+A prefecture footprint is the administrative extent, not the measured extent
+of what is inside the zip. It is a superset, so it can only cause a spatial
+query to match something it did not need, never to miss something it did.
+`ksj:extent_source` says which of the two an Item's footprint came from.
+
+98% of Items have one. The rest are published per river-bureau
+(北海道開発局 and the other eight) or per metropolitan region, and no
+administrative boundary matches those, so they stay null.
 
 **Sizes.** The size printed on the page is unusable: the base of "MB" is
 1024^2 on most pages and 10^6 on others, `A46` to `A48` use comma separators,
@@ -76,6 +95,10 @@ Each download link sits in a table row whose other cells say what the file is,
 and the table's header names those columns: 地域, 形式, 河川, 測地系, 年度.
 Taking the row gives an Item a title a person can read, and gives the year
 from the page rather than from a guess at the filename.
+
+Sortable pages write their headers as `地域 ▲ ▼`, so the arrows are stripped
+before the label is used as a key; without that, 4,739 rows lose every cell
+and no error is raised.
 
 Four upstream rows (in A46, A47, A48 and N12) hold two download links because
 a `</tr>` is missing. The cells then describe one of the two and there is no

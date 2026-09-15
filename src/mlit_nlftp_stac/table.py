@@ -23,6 +23,15 @@ _NOT_TITLE = {"測地系", "ファイル容量", "ファイル名", "ダウン�
 
 _ERAS = {"令和": 2018, "平成": 1988, "昭和": 1925, "大正": 1911, "明治": 1867}
 
+# Sortable tables put arrows in the header cell, so the same column is called
+# "地域" on one page and "地域 ▲ ▼" on another. Keying on the raw text loses
+# every row on the sortable pages, quietly: 4,739 of them.
+_SORT_ARROWS = re.compile(r"[\s\u3000]*[▲▼△▽↑↓]+[\s\u3000]*")
+
+
+def _header_label(text: str) -> str:
+    return _SORT_ARROWS.sub("", text).strip()
+
 
 def _text(fragment: str) -> str:
     s = _TAG.sub(" ", fragment)
@@ -43,7 +52,7 @@ def parse_download_rows(page_html: str) -> List[Dict]:
         for row in _ROW.findall(table):
             ths = _TH.findall(row)
             if ths:
-                header = [_text(t) for t in ths]
+                header = [_header_label(_text(t)) for t in ths]
                 continue
             links = _DOWNLD.findall(row)
             if not links:

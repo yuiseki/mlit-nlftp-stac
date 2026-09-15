@@ -20,12 +20,21 @@ Known upstream irregularities, all verified against the live site:
   (`7,905KB`), one label reads `48.7.2MB`, and `P29-23_01_GML.zip` is
   advertised as 5.19MB while the file is 0.44MB. Use `data/head.jsonl`.
 - `G09-2026` is linked from the index but returns 404.
+- Sortable pages write their column headers as `地域 ▲ ▼`. Keying on the raw
+  text loses 4,739 rows without any error.
+- Four rows, in A46, A47, A48 and N12, hold two download links because a
+  `</tr>` is missing.
 
 ## Rules that are not negotiable
 
-- Never fabricate a geometry. An Item whose footprint cannot be derived gets
-  `"geometry": null` and no `bbox`. A nationwide bbox on a file that is not
-  nationwide makes spatial search wrong in a way nobody notices.
+- Never fabricate a geometry. Two sources are real and both are used: a JIS
+  mesh code in the filename, which names the exact cell, and the extent of a
+  prefecture as N03 行政区域 states it, for a file published per prefecture.
+  Everything else gets `"geometry": null` and no `bbox`. A nationwide bbox on
+  a file that is not nationwide makes spatial search wrong in a way nobody
+  notices. Files published per river-bureau (北海道開発局 and the rest) or per
+  metropolitan region have no administrative boundary to borrow and stay
+  without a footprint.
 - Never fabricate a size or a checksum either. If `data/head.jsonl` has no
   entry for a URL, the Item omits `file:size` rather than guessing from the
   page label.

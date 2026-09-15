@@ -34,6 +34,14 @@ def collection_id(page: str) -> str:
     return head if head and tail.isdigit() and len(tail) == 4 else page
 
 
+def _count_with_geometry(out: Path) -> int:
+    n = 0
+    for p in out.glob("collections/*/items/*.json"):
+        if json.loads(p.read_text()).get("geometry") is not None:
+            n += 1
+    return n
+
+
 def _pages_by_collection(rows: list) -> dict:
     """One page per Collection.
 
@@ -63,6 +71,14 @@ def main() -> int:
         return 1
     head = {r["url"]: r for r in load(DATA / "head.jsonl") if r.get("status") == 200}
     pages = _pages_by_collection(load(DATA / "pages.jsonl"))
+    regions = {}
+    region_file = DATA / "region_bbox.json"
+    if region_file.exists():
+        regions = json.loads(region_file.read_text())["regions"]
+        print(f"{len(regions)} region extents from N03")
+    else:
+        print("data/region_bbox.json is missing, so only mesh-named items get a "
+              "footprint. Run scripts/07_region_bbox.py.", file=sys.stderr)
     if not pages:
         print("data/pages.jsonl is missing, so collections will be named by "
               "identifier only. Re-run scripts/01_fetch_index.py.", file=sys.stderr)
@@ -79,10 +95,12 @@ def main() -> int:
     collections = []
     for cid, rows in sorted(groups.items()):
         page_url = rows[0]["page_url"]
-        items = [build_item({**r, **head.get(r["url"], {})}, page_url, cid) for r in rows]
+        items = [
+            build_item({**r, **head.get(r["url"], {})}, page_url, cid, regions) for r in rows
+        ]
         for it in items:
             write_json(out / "collections" / cid / "items" / f"{it['id']}.json", it)
-        coll = build_collection(cid, page_url, items, pages.get(cid))
+        coll = build_collection(cid, page_url, items, pages.get(cid), regions)
         write_json(out / "collections" / cid / "collection.json", coll)
         (out / "collections" / cid / "README.md").write_text(
             f"# {coll['title']}\n\n{coll['description']}\n\n"
@@ -104,6 +122,15 @@ def main() -> int:
     print(f"{len(collections)} collections, {titled} items -> {out}")
     print(f"{named} of {titled} items carry the page's own row "
           f"({named * 100 // max(titled, 1)}%)")
+    located = sum(
+        1
+        for c in collections
+        for link in c["links"]
+        if link["rel"] == "item"
+    )
+    with_geom = _count_with_geometry(out)
+    print(f"{with_geom} of {located} items have a footprint "
+          f"({with_geom * 100 // max(located, 1)}%)")
     return 0
 
 

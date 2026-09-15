@@ -19,7 +19,11 @@ from .table import title_from_cells, year_from_nendo
 STAC_VERSION = "1.1.0"
 FILE_EXT = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
 
-JAPAN_BBOX = [122.93, 20.42, 153.99, 45.56]
+# Last resort only, for a Collection with no Item extent and no
+# data/region_bbox.json to fall back on. The real value comes from N03's own
+# nationwide shapefile header; this copy is rounded outward so it can only be
+# too large, never too small.
+JAPAN_BBOX = [122.9, 20.4, 154.0, 45.6]
 AGREEMENT = "https://nlftp.mlit.go.jp/ksj/other/agreement.html"
 
 MLIT = {
@@ -54,8 +58,17 @@ def item_id(row: dict) -> str:
     return base.rsplit(".", 1)[0]
 
 
-def build_item(row: dict, page_url: str, collection_id: str) -> dict:
-    """`row` is one harvested link, optionally carrying HEAD results."""
+def build_item(
+    row: dict,
+    page_url: str,
+    collection_id: str,
+    regions: Optional[dict] = None,
+) -> dict:
+    """`row` is one harvested link, optionally carrying HEAD results.
+
+    `regions` maps a 地域 name to its extent, read from N03 行政区域 by
+    `scripts/07_region_bbox.py`.
+    """
     parsed = parse_filename(posixpath.basename(row["url"]) or row["filename"])
     cells = row.get("cells") or {}
 
@@ -65,7 +78,16 @@ def build_item(row: dict, page_url: str, collection_id: str) -> dict:
     year = year_from_nendo(cells.get("年度", "")) or parsed.year
     start, end = _temporal(year)
 
+    # A mesh code names the exact cell the file covers, so it wins. Failing
+    # that, a file published per prefecture covers that prefecture, and N03
+    # says how far that reaches. Both are real extents; neither is invented.
     bbox = primary_mesh_bbox(parsed.mesh_code) if parsed.mesh_code else None
+    extent_source = "mesh" if bbox else None
+    if bbox is None and regions:
+        region = regions.get(cells.get("地域", ""))
+        if region:
+            bbox = tuple(region["bbox"])
+            extent_source = "n03"
     geometry = bbox_to_polygon(bbox) if bbox else None
 
     props = {
@@ -77,6 +99,13 @@ def build_item(row: dict, page_url: str, collection_id: str) -> dict:
         "ksj:mesh_code": parsed.mesh_code,
         "ksj:declared_size": row.get("size_label"),
     }
+    if extent_source:
+        # The footprint of a prefecture file is the prefecture, not the
+        # measured extent of what is inside the zip. Say which it is.
+        props["ksj:extent_source"] = (
+            "JIS mesh code in the filename" if extent_source == "mesh"
+            else "国土数値情報 N03 行政区域 (administrative extent, not the file's own)"
+        )
     title = title_from_cells(cells)
     if title:
         props["title"] = title
@@ -145,6 +174,7 @@ def build_collection(
     page_url: str,
     items: Iterable[dict],
     page: Optional[dict] = None,
+    regions: Optional[dict] = None,
 ) -> dict:
     """`page` is the parsed dataset page, when one was harvested for this id.
 
@@ -165,8 +195,17 @@ def build_collection(
             if p
         }
     )
+    # The union of what the Items actually cover, not a list of every Item's
+    # box: A31b alone would contribute 2,007 of them and say no more than one.
     boxes = [it["bbox"] for it in items if "bbox" in it]
-    spatial = [JAPAN_BBOX] + boxes if boxes else [JAPAN_BBOX]
+    if boxes:
+        spatial = [[
+            min(b[0] for b in boxes), min(b[1] for b in boxes),
+            max(b[2] for b in boxes), max(b[3] for b in boxes),
+        ]]
+    else:
+        nationwide = (regions or {}).get("全国", {}).get("bbox")
+        spatial = [list(nationwide) if nationwide else JAPAN_BBOX]
 
     return {
         "type": "Collection",

@@ -38,6 +38,19 @@ def test_the_url_is_resolved_from_the_onclick_path():
     assert _rows()[0]["path"] == "../data/A31a/A31a-25/A31a-25_81_10_GML.zip"
 
 
+def test_sort_arrows_in_a_header_do_not_become_part_of_the_column_name():
+    from mlit_nlftp_stac.table import parse_download_rows as parse
+
+    html = """
+    <table><tr><th>地域 ▲ ▼</th><th>年度 ▲ ▼</th><th>ファイル名 ▲ ▼</th><th>ダウンロード</th></tr>
+    <tr><td>東京</td><td>2026年（令和8年）</td><td>x.zip</td>
+    <td><a onclick="javascript:DownLd('1MB','x.zip','../data/x.zip' ,this);"></a></td></tr></table>
+    """
+    cells = parse(html)[0]["cells"]
+    assert cells["地域"] == "東京"
+    assert cells["年度"] == "2026年（令和8年）"
+
+
 def test_western_year_wins_when_both_are_printed():
     assert year_from_nendo("2025年（令和7年）") == 2025
 
