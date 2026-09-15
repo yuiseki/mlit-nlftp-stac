@@ -28,7 +28,8 @@ def test_the_year_is_a_number_so_it_can_be_filtered_on():
 
 
 def test_the_fields_a_query_would_filter_on_survive():
-    row = item_row(ITEM, "鉄道データ (N02)")
+    row = item_row(ITEM, "鉄道データ (N02)", "", "交通")
+    assert row["category"] == "交通"
     assert row["redistribution"] == "allowed"
     assert row["license"] == "CC-BY-4.0"
     assert row["region"] == "全国"

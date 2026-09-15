@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from mlit_nlftp_stac.page import spdx_from_terms  # noqa: E402
+from mlit_nlftp_stac.table import nendo_of, year_from_nendo  # noqa: E402
 from mlit_nlftp_stac.stac import (  # noqa: E402
     REDISTRIBUTION,
     build_collection,
@@ -128,10 +129,21 @@ def main() -> int:
         terms = page.get("terms") or ""
         license_ = spdx_from_terms(terms)
         coll_title = f"{page.get('title') or cid} ({cid})"
+        identifier = page.get("identifier") or cid
+        # The newest year per (地域, 形式), so an Item can say whether it is
+        # the current file for its own prefecture rather than for the dataset.
+        latest_years: dict = {}
+        for r in rows:
+            cells = r.get("cells") or {}
+            y = year_from_nendo(nendo_of(cells))
+            if y is None:
+                continue
+            key = (cells.get("地域") or "", cells.get("形式") or "")
+            latest_years[key] = max(latest_years.get(key, 0), y)
         items = [
             build_item(
                 {**r, **head.get(r["url"], {})}, page_url, cid, regions,
-                license_, terms, base_url, coll_title,
+                license_, terms, base_url, coll_title, identifier, latest_years,
             )
             for r in rows
         ]
@@ -150,7 +162,7 @@ def main() -> int:
             f"- Identifier: `{coll['ksj:identifier']}`\n"
             f"- Files: {len(items)}\n"
             f"- Source: {page_url}\n"
-            f"- Terms of use (as stated upstream): {coll['ksj:terms'] or 'not stated on the page'}\n"
+            f"- Terms of use (as stated upstream): {coll.get('ksj:terms') or 'not stated on the page'}\n"
             f"- SPDX: `{coll['license']}`\n", encoding="utf-8")
         for it in items:
             status = it["properties"].get("ksj:redistribution") or "check"

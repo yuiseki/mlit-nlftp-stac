@@ -70,6 +70,8 @@ def build_item(
     terms: str = "",
     base_url: str = "",
     collection_title: str = "",
+    dataset_identifier: str = "",
+    latest_years: Optional[dict] = None,
 ) -> dict:
     """`row` is one harvested link, optionally carrying HEAD results.
 
@@ -111,11 +113,13 @@ def build_item(
         # an Item page with a download button and no terms on it is a trap.
         "license": spdx,
         "ksj:redistribution": redistribution,
-        "ksj:terms_applied": applied,
-        "ksj:terms": terms,
+        **({"ksj:terms_applied": applied} if applied else {}),
+        **({"ksj:terms": terms} if terms else {}),
         "start_datetime": start,
         "end_datetime": end,
-        "ksj:identifier": parsed.identifier,
+        # The filename yields it for most datasets and not for the mesh ones,
+        # whose names start with a digit. The page states it either way.
+        "ksj:identifier": parsed.identifier or dataset_identifier or None,
         "ksj:area_tokens": parsed.area_tokens,
         "ksj:mesh_code": parsed.mesh_code,
         "ksj:declared_size": row.get("size_label"),
@@ -143,6 +147,13 @@ def build_item(
             props[key] = cells[label]
     if nendo_of(cells):
         props["ksj:nendo"] = nendo_of(cells)
+    # Whether this is the newest year for its region. Without it, finding the
+    # current file for 高知 meant listing every Item of the dataset and
+    # comparing titles by eye.
+    if latest_years is not None and year is not None:
+        key = (cells.get("地域") or "", cells.get("形式") or "")
+        if key in latest_years:
+            props["ksj:is_latest"] = year == latest_years[key]
     if start is None:
         # STAC allows a null datetime only when both ends are present.
         props["datetime"] = "1970-01-01T00:00:00Z"
@@ -290,7 +301,13 @@ def build_collection(
         # their terms by year, which no single identifier can express.
         "license": spdx_from_terms(terms),
         "providers": [MLIT],
-        "keywords": [k for k in ("国土数値情報", page.get("identifier") or collection_id) if k],
+        "keywords": [
+            k for k in (
+                "国土数値情報",
+                page.get("identifier") or collection_id,
+                page.get("category"),
+            ) if k
+        ],
         # What the columns are called and what their coded values mean. Two
         # agents could find the right dataset here and not plan the work,
         # because this was the one thing only the upstream page had.
@@ -309,8 +326,18 @@ def build_collection(
         },
         "updated": _utc_now(),
         "ksj:identifier": page.get("identifier") or collection_id,
-        "ksj:terms": terms,
+        # Absent rather than empty: 7 pages state no terms, and "" reads as a
+        # value. `ksj:redistribution` on each Item says `check` for these.
+        **({"ksj:terms": terms} if terms else {}),
         "ksj:source_page": page_url,
+        **({"ksj:category": page["category"]} if page.get("category") else {}),
+        # The newest year this dataset has, which is the first thing anyone
+        # asks and used to mean reading every Item's title.
+        **({"ksj:latest_year": max(years_seen)} if (years_seen := sorted({
+            int(it["properties"]["start_datetime"][:4])
+            for it in items
+            if it["properties"].get("start_datetime")
+        })) else {}),
         **{
             key: page.get("fields", {})[label]
             for label, key in _EXTRA_FIELDS.items()

@@ -112,6 +112,7 @@ and `requests` are fine. Until that rule is changed, `urllib` callers need
 | `geometry` / `bbox` | a JIS mesh cell, or the prefecture's extent from N03 行政区域 |
 | `properties.ksj:extent_source` | which of those two, in words |
 | `start_datetime` / `end_datetime` | from the page's 年度 column, not guessed from the filename |
+| `properties.ksj:is_latest` | whether this is the newest year **for its own region** |
 | `properties.ksj:declared_size` | what the page claims, which is not always what the file weighs |
 
 And a Collection carries `ksj:variants`: one entry per shapefile in the zip,
@@ -134,8 +135,9 @@ Worth knowing before you plan work around it:
   shapefiles, with 117 code lists and 46,040 coded values beside them. The
   five without are datasets whose page states no 属性情報 table. Nine code
   lists are spreadsheets rather than pages and are not read.
-- **No search.** A static catalog has no `/search`. The region index covers
-  the common case; anything else means reading `catalog.json` and choosing.
+- **No search.** A static catalog has no `/search`. `items.parquet` answers
+  most of it, the region index covers "what is here", and Collections carry a
+  `ksj:category` (施設, 交通, 災害・防災 …) and keywords to filter on.
 - **Footprints are administrative, not measured.** A prefecture file gets the
   prefecture's extent, so spatial search works at prefecture granularity and
   no finer. 98% of Items have one; files published per river-bureau or per

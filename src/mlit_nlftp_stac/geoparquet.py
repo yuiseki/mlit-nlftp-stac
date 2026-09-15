@@ -32,6 +32,8 @@ COLUMNS = [
     "crs",
     "nendo",
     "mesh_code",
+    "is_latest",
+    "category",
     "extent_source",
     "href",
     "file_size",
@@ -42,7 +44,8 @@ COLUMNS = [
 ]
 
 
-def item_row(item: Dict, collection_title: str = "", base_url: str = "") -> Dict:
+def item_row(item: Dict, collection_title: str = "", base_url: str = "",
+             category: str = "") -> Dict:
     """One Item as a flat row."""
     p = item.get("properties", {})
     asset = (item.get("assets") or {}).get("source", {})
@@ -67,6 +70,8 @@ def item_row(item: Dict, collection_title: str = "", base_url: str = "") -> Dict
         "crs": p.get("ksj:crs"),
         "nendo": p.get("ksj:nendo"),
         "mesh_code": p.get("ksj:mesh_code"),
+        "is_latest": p.get("ksj:is_latest"),
+        "category": category or None,
         "extent_source": p.get("ksj:extent_source"),
         "href": asset.get("href"),
         "file_size": asset.get("file:size"),
@@ -82,6 +87,15 @@ def item_row(item: Dict, collection_title: str = "", base_url: str = "") -> Dict
 
 
 def rows_from(items: Iterable[Dict], titles: Optional[Dict[str, str]] = None,
-              base_url: str = "") -> List[Dict]:
+              base_url: str = "", categories: Optional[Dict[str, str]] = None) -> List[Dict]:
     titles = titles or {}
-    return [item_row(it, titles.get(it.get("collection"), ""), base_url) for it in items]
+    categories = categories or {}
+    return [
+        item_row(
+            it,
+            titles.get(it.get("collection"), ""),
+            base_url,
+            categories.get(it.get("collection"), ""),
+        )
+        for it in items
+    ]

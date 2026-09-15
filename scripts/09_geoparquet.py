@@ -40,10 +40,12 @@ def main() -> int:
         print(f"no catalog at {cat}. Run `make build` first.", file=sys.stderr)
         return 1
 
-    titles = {}
+    titles, categories = {}, {}
     for p in cat.glob("collections/*/collection.json"):
         d = json.loads(p.read_text())
         titles[d["id"]] = d.get("title", "")
+        if d.get("ksj:category"):
+            categories[d["id"]] = d["ksj:category"]
 
     items, geoms = [], []
     for p in sorted(cat.glob("collections/*/items/*.json")):
@@ -54,7 +56,7 @@ def main() -> int:
     print(f"{len(items)} items, {sum(1 for g in geoms if g is not None)} with a geometry")
 
     gdf = gpd.GeoDataFrame(
-        rows_from(items, titles, args.base_url.rstrip("/")),
+        rows_from(items, titles, args.base_url.rstrip("/"), categories),
         geometry=gpd.GeoSeries(geoms, crs="EPSG:4326"),
     )
 

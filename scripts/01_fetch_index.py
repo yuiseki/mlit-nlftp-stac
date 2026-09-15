@@ -20,6 +20,7 @@ from urllib.parse import urljoin
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from mlit_nlftp_stac.page import parse_page  # noqa: E402
+from mlit_nlftp_stac.categories import LIST_URL, parse_categories  # noqa: E402
 from mlit_nlftp_stac.table import parse_download_rows  # noqa: E402
 
 BASE = "https://nlftp.mlit.go.jp/ksj/"
@@ -47,6 +48,14 @@ def main() -> int:
     pages = sorted(set(re.findall(r"datalist/KsjTmplt-([A-Za-z0-9_.\-]+?)\.html", get(BASE + "index.html"))))
     print(f"{len(pages)} dataset pages", flush=True)
 
+    # Which shelf each dataset sits on. Only the JPGIS list page says.
+    try:
+        categories = parse_categories(get(LIST_URL))
+        print(f"{len(categories)} datasets carry a category", flush=True)
+    except Exception as e:  # noqa: BLE001
+        categories = {}
+        print(f"  category list unavailable: {e}", flush=True)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     seen, failed, missed, n = set(), [], [], 0
     with OUT.open("w", encoding="utf-8") as f, OUT_PAGES.open("w", encoding="utf-8") as fp:
@@ -58,7 +67,10 @@ def main() -> int:
                 failed.append((page, str(e)[:80]))
                 continue
             meta = parse_page(html, url)
-            fp.write(json.dumps({"page": page, "page_url": url, **meta}, ensure_ascii=False) + "\n")
+            fp.write(json.dumps(
+                {"page": page, "page_url": url, **meta,
+                 **({"category": categories[page]} if page in categories else {})},
+                ensure_ascii=False) + "\n")
 
             rows = parse_download_rows(html)
             # The row parser only sees links inside a table. Anything outside

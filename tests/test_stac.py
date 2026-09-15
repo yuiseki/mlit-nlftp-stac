@@ -209,3 +209,34 @@ def test_every_link_carries_a_title():
         if link["rel"] in ("root", "parent", "collection"):
             assert link.get("title"), link
     assert [x for x in it["links"] if x["rel"] == "parent"][0]["title"] == "鉄道データ (N02)"
+
+
+def test_an_item_says_whether_it_is_the_newest_for_its_own_region():
+    # A40 is current to 2024 for some prefectures and stops at 2016 for 高知.
+    # Asking "is this the file to use?" meant listing every item and comparing
+    # titles by eye.
+    latest = {("高知", ""): 2016, ("東京", ""): 2024}
+    old = _row("https://x/A40-16_39_GML.zip", "a.zip")
+    old["cells"] = {"地域": "高知", "年度": "2016年（平成28年）"}
+    assert build_item(old, PAGE, "A40", None, "other", "", "", "", "A40", latest)[
+        "properties"]["ksj:is_latest"] is True
+
+    tokyo_old = _row("https://x/A40-16_13_GML.zip", "b.zip")
+    tokyo_old["cells"] = {"地域": "東京", "年度": "2016年（平成28年）"}
+    assert build_item(tokyo_old, PAGE, "A40", None, "other", "", "", "", "A40", latest)[
+        "properties"]["ksj:is_latest"] is False
+
+
+def test_a_mesh_item_gets_its_identifier_from_the_page():
+    # 500m_mesh_2024_32_SHP starts with a digit, so the filename yields no
+    # identifier and a script filtering on it saw the population data as empty.
+    row = _row("https://x/500m_mesh_2024_32_SHP.zip", "c.zip")
+    row["cells"] = {"地域": "島根", "年度": "2024年（令和6年）"}
+    it = build_item(row, PAGE, "mesh500r6", None, "other", "", "", "", "mesh500r6")
+    assert it["properties"]["ksj:identifier"] == "mesh500r6"
+
+
+def test_terms_that_were_never_stated_are_absent_rather_than_empty():
+    it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "P05", None, "other", "")
+    assert "ksj:terms" not in it["properties"]
+    assert it["properties"]["ksj:redistribution"] == "check"
