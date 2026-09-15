@@ -60,8 +60,12 @@ there is no reason to hurry it.
 
 <https://stac.yuiseki.net/mlit-nlftp/>
 
-Browsable without installing anything:
-<https://radiantearth.github.io/stac-browser/#/external/stac.yuiseki.net/mlit-nlftp/catalog.json>
+Browsable without installing anything, in STAC Browser's hosted demo:
+<https://browser.moregeo.it/external/stac.yuiseki.net/mlit-nlftp/catalog.json>
+
+(`radiantearth.github.io/stac-browser` redirects there. The demo is run by
+moreGeo, who maintain STAC Browser, and the repository's own workflow deploys
+to it.)
 
 One host, one directory per catalog. `make build` bakes that into the
 absolute `self` links; every other link stays relative, so the same build
