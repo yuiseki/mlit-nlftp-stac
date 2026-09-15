@@ -87,8 +87,10 @@ Worth knowing before you plan work around it:
   prefecture's extent, so spatial search works at prefecture granularity and
   no finer. 98% of Items have one; files published per river-bureau or per
   metropolitan region have no boundary to borrow and carry `"geometry": null`.
-- **`file:size` is 4% covered** while the HEAD sweep runs. `make head` is
-  resumable and fills the rest.
+- **`file:size` covers the newest vintage**, 7,348 of 21,603 files, measured
+  by HEAD: 87.3 GB. Older vintages carry only `ksj:declared_size`, the figure
+  the page prints, which disagrees with the file often enough not to trust.
+  `make head` fills the rest and is resumable.
 - **A licence belongs to a year, not to a dataset.** 鉄道データ is CC BY 4.0
   from 2020 and 商用可 before it; 学校データ is CC BY 4.0 for 2023 and 2021 and
   非商用 for 2013. Each Item resolves its own, and `ksj:terms_applied` quotes
