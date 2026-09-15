@@ -101,6 +101,16 @@ def _rules(terms: str) -> List[Tuple[str, str]]:
                 out.append((current_scope, "\n".join(current)))
             current_scope, current = m.group(1), []
             continue
+        # A line that is nothing but years is a heading as well. P11 writes
+        # 「2022年度（令和4年度）」 on its own line with the licence underneath,
+        # no bracket and no colon.
+        years, _ = _years_in(line)
+        if years and not re.sub(r"[0-9０-９年度（）()、,\s令和平成昭和元]", "", line):
+            if current_scope is not None:
+                out.append((current_scope, "\n".join(current)))
+            current_scope, current = line, []
+            continue
+
         m = re.match(r"^(.{2,40}?)[：:]\s*(.+)$", line)
         if m and (_years_in(m.group(1))[0] or "上記以外" in m.group(1)):
             if current_scope is not None:

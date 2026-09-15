@@ -76,3 +76,19 @@ def test_a_list_indented_by_an_empty_column_still_parses():
     # hogorinCd and midorinokairoCd indent their table, which put the code in
     # the second cell and made the page look like it had no rows at all.
     assert parse_codelist(INDENTED) == [{"value": "2010", "label": "森林生態系保護地域保存地区"}]
+
+
+TWO_CELL = """<html><body><table>
+<tr><th rowspan="3">属性情報</th><th>属性名<br>（かっこ内はshp属性名）</th><th>説明</th><th>属性の型</th></tr>
+<tr><td>収容人数（P20_005）</td><td>避難施設の収容可能人数</td><td>整数値型</td></tr>
+<tr><td>津波災害（P20_008）</td><td>真偽値型</td></tr>
+</table></body></html>"""
+
+
+def test_a_row_with_no_description_does_not_put_the_type_in_it():
+    # P20 omits the description for 津波災害（P20_008） and the four after it.
+    cols = {c["column"]: c for c in parse_attributes(TWO_CELL)[0]["columns"]}
+    assert cols["P20_005"]["description"] == "避難施設の収容可能人数"
+    assert cols["P20_005"]["type"] == "integer"
+    assert cols["P20_008"]["description"] == ""
+    assert cols["P20_008"]["type"] == "boolean"

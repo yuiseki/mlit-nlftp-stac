@@ -94,6 +94,11 @@ select region, count(*)
 Spatial predicates need DuckDB's spatial extension. Use 1.5.5 or later: 1.3.2
 crashes on it.
 
+**Set a User-Agent.** Cloudflare sits in front of this host and answers 403 to
+`Python-urllib/3.12`, the default the Python standard library sends. `curl`
+and `requests` are fine. Until that rule is changed, `urllib` callers need
+`Request(url, headers={"User-Agent": "..."})`.
+
 ## What an Item tells you
 
 | | |

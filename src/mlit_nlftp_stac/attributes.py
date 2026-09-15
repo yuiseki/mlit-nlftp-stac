@@ -86,17 +86,26 @@ def parse_attributes(page_html: str, page_url: str = BASE) -> List[Dict]:
         if not m:  # 地物情報 and 関連役割名 rows land here
             continue
         name, column = m.group(1).strip(), m.group(2)
+        # Some rows omit the description and give only name and type: P20
+        # does it for 津波災害（P20_008） and the four after it. Reading the
+        # second cell as a description put 真偽値型 there and left the type
+        # unknown, which is the two fields swapped.
+        rest = texts[1:]
+        if len(rest) == 1 and _type_of(rest[0]) != "unknown":
+            description, type_cell = "", rest[0]
+        else:
+            description = rest[0] if rest else ""
+            type_cell = rest[1] if len(rest) > 1 else ""
         col: Dict[str, object] = {
             "name": name,
             "column": column,
-            "description": texts[1],
+            "description": description,
         }
-        type_cell = texts[2] if len(texts) > 2 else ""
         col["type"] = _type_of(type_cell)
         cl = _CODELIST.search(type_cell)
         if cl:
             col["codelist"] = cl.group(1).strip()
-            href = _HREF.search(cells[2][1] if len(cells) > 2 else "")
+            href = _HREF.search(row)
             if href:
                 col["codelist_url"] = urljoin(page_url, href.group(1))
         current["columns"].append(col)

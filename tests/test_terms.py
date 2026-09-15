@@ -151,3 +151,25 @@ def test_a_black_square_that_names_no_year_is_not_a_scope():
     terms = "オープンデータ（CC_BY_4.0（一部制限））\n＜オープンデータとして利用可（商用利用可・再配信可）＞\n東京都\n■宮城県\n規約を遵守すること"
     assert resolve(terms, 2024, "東京")[1] == "allowed"
     assert resolve(terms, 2024, "宮城")[1] == "check"
+
+
+P11 = """2022年度（令和4年度）
+オープンデータ（CC_BY_4.0）
+2010年度（平成22年度）
+非商用"""
+
+
+def test_a_bare_year_line_is_a_heading_too():
+    # P11 and N07 write the scope on its own line with no ＜＞, no ■ and no
+    # colon, and the licence underneath. Reading only the other three forms
+    # left the whole statement unscoped, so every item took the first licence
+    # mentioned: the 2010 file, which the page calls 非商用, was published as
+    # CC BY 4.0 and redistributable.
+    assert resolve(P11, 2022)[:2] == ("CC-BY-4.0", "allowed")
+    assert resolve(P11, 2010)[:2] == ("other", "not-allowed")
+
+
+def test_the_deciding_sentence_is_the_rule_not_the_whole_statement():
+    applied = resolve(P11, 2010)[2]
+    assert "2010年度" in applied
+    assert "CC_BY_4.0" not in applied
