@@ -1,5 +1,10 @@
-# Generated. `make index` rebuilds it from nlftp in about 5 minutes.
+# Harvested from nlftp; `make links` rebuilds both in about three minutes.
+# Tracking one without the other would not make an offline build possible,
+# and a stale copy in git is worse than no copy. data/region_bbox.json is
+# tracked: it is 20 KB, it changes only when N03 does, and rebuilding it means
+# 56 polite requests to a government server.
 data/links.jsonl
+data/pages.jsonl
 data/head.jsonl
 
 # The catalog itself is a build artifact. `make build` rebuilds it from
