@@ -163,7 +163,15 @@ def resolve(terms: str, year: Optional[int], region: Optional[str] = None) -> Tu
     scoped = [(s, b) for s, b in rules if s]
     if not scoped:
         spdx, redis = _licence_of(terms, region)
-        return spdx, redis, terms
+        # The line that states the licence, not the whole statement. Several
+        # pages append 座標系 and its value to the same field, and returning
+        # all of it made "the sentence that decided" include the CRS.
+        deciding = next(
+            (ln.strip() for ln in terms.splitlines()
+             if ln.strip() and _licence_of(ln)[0:2] != ("other", CHECK)),
+            terms.splitlines()[0].strip(),
+        )
+        return spdx, redis, deciding
 
     if year is None:
         return "other", CHECK, terms

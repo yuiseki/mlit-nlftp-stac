@@ -112,6 +112,9 @@ def parse_attributes(page_html: str, page_url: str = BASE) -> List[Dict]:
         if not m:  # 地物情報 and 関連役割名 rows land here
             continue
         name, column = m.group(1).strip(), m.group(2)
+        # バス区分コード（P11_004_01～35） names 35 columns at once. Saying so
+        # is the difference between a name a query can spell and one it cannot.
+        repeats = re.search(r"^(.*?_)(\d+)\s*[～~〜-]\s*(\d+)$", column)
         # Some rows omit the description and give only name and type: P20
         # does it for 津波災害（P20_008） and the four after it. Reading the
         # second cell as a description put 真偽値型 there and left the type
@@ -127,6 +130,14 @@ def parse_attributes(page_html: str, page_url: str = BASE) -> List[Dict]:
             "column": column,
             "description": description,
         }
+        if repeats:
+            width = len(repeats.group(2))
+            col["repeats"] = {
+                "prefix": repeats.group(1),
+                "from": int(repeats.group(2)),
+                "to": int(repeats.group(3)),
+                "example": f"{repeats.group(1)}{int(repeats.group(2)):0{width}d}",
+            }
         col["type"] = _type_of(type_cell)
         cl = _CODELIST.search(type_cell)
         if cl:

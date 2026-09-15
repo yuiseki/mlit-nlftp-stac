@@ -173,3 +173,11 @@ def test_the_deciding_sentence_is_the_rule_not_the_whole_statement():
     applied = resolve(P11, 2010)[2]
     assert "2010年度" in applied
     assert "CC_BY_4.0" not in applied
+
+
+def test_the_deciding_line_does_not_drag_in_the_coordinate_system():
+    # mesh500r6 puts 座標系 and its value in the same field as the licence.
+    terms = "オープンデータ（CC_BY_4.0）\n座標系\n世界測地系（JGD2011） / （B, L）"
+    spdx, redis, applied = resolve(terms, 2024)
+    assert (spdx, redis) == ("CC-BY-4.0", "allowed")
+    assert applied == "オープンデータ（CC_BY_4.0）"

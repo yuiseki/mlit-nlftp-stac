@@ -26,6 +26,14 @@ urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "you"}
 | what you may republish | `licenses/allowed/catalog.json` |
 | one dataset in detail | `collections/<id>/collection.json` |
 
+Do not take a per-dataset fact from this file on trust; count it. An earlier
+version of this page said A40 was "current to 2024 in most places", which was
+wrong, and a reader repeated it to a planner.
+
+```sql
+select region, max(year) from 'items.parquet' where collection = 'A40' group by 1;
+```
+
 `collections/index.json` (32 KB) is every dataset with its **description**,
 category, keywords, latest year and item count. Start there when you are
 choosing by what a dataset contains rather than by its name: the word that
@@ -81,8 +89,10 @@ The Item JSON is authoritative. `items.parquet` is built from it.
 
 ## Picking the right file
 
-A dataset's newest year is not the same in every prefecture. 津波浸水想定 (A40)
-is current to 2024 in most places and stops at 2016 in 高知 and 徳島. So:
+A dataset's newest year is not the same in every prefecture. 津波浸水想定
+(A40) covers 39 prefectures, and their newest years are: 2016 for sixteen of
+them, 2023 for eight, 2022 for five, 2020 and 2018 for three each, 2017 for
+two, and 2024 and 2021 for one each. So:
 
 - `ksj:is_latest` on an Item is computed **per region**, not per dataset.
   Filter on it.
@@ -150,7 +160,9 @@ with its columns.
 ```
 
 `column` is the name the shapefile actually uses and the one a query has to
-spell. Coded columns hold values like `13`; the code list says what they mean.
+spell. Where it contains `～`, as in `P11_004_01～35`, the page is naming a
+numbered family rather than one column; `repeats` then gives the prefix, the
+range and an example of a real name (`P11_004_01`). Coded columns hold values like `13`; the code list says what they mean.
 
 ```bash
 curl -s .../codelists/RailwayClassCd.json | jq '.values[] | select(.value=="13")'
@@ -175,7 +187,9 @@ Shapefiles are Shift-JIS in older vintages and both encodings in newer ones.
 `ksj:coordinate_system` is the dataset's CRS as its page states it: JGD2011 or
 JGD2000, and they differ between datasets you might overlay (A40 is JGD2011,
 P20 is JGD2000). `ksj:crs` is the download table's own word, usually the
-family name 世界測地系, which is not enough to transform with.
+family name 世界測地系, which is not enough to transform with. Neither is
+per-vintage: a dataset that changed datum lists both, and some datasets state
+the CRS inside their terms of use instead, where this does not find it.
 
 ## What this catalog gets wrong, and where it is thin
 

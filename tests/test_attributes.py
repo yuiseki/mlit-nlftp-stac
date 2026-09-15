@@ -150,3 +150,8 @@ def test_a_column_that_repeats_35_times_is_still_a_column():
     cols = {c["column"]: c for c in parse_attributes(RANGE)[0]["columns"]}
     assert set(cols) == {"P11_003_01～35", "P11_004_01～35"}
     assert cols["P11_004_01～35"]["type"] == "codelist"
+    # And it says so structurally: the name in the data is P11_004_01, not
+    # the range, and a query has to spell one of the 35.
+    assert cols["P11_004_01～35"]["repeats"] == {
+        "prefix": "P11_004_", "from": 1, "to": 35, "example": "P11_004_01"
+    }
