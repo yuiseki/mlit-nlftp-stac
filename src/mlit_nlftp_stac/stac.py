@@ -14,7 +14,7 @@ from typing import Iterable, Optional
 from .ksj import parse_filename
 from .mesh import bbox_to_polygon, primary_mesh_bbox
 from .page import spdx_from_terms
-from .table import title_from_cells, year_from_nendo
+from .table import nendo_of, title_from_cells, year_from_nendo
 
 STAC_VERSION = "1.1.0"
 FILE_EXT = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
@@ -63,11 +63,17 @@ def build_item(
     page_url: str,
     collection_id: str,
     regions: Optional[dict] = None,
+    license: str = "other",
+    terms: str = "",
 ) -> dict:
     """`row` is one harvested link, optionally carrying HEAD results.
 
     `regions` maps a 地域 name to its extent, read from N03 行政区域 by
     `scripts/07_region_bbox.py`.
+
+    `license` and `terms` are the Collection's, repeated here on purpose: a
+    person who lands on an Item page and downloads the zip from it never sees
+    the Collection, and the terms are the one thing they must not miss.
     """
     parsed = parse_filename(posixpath.basename(row["url"]) or row["filename"])
     cells = row.get("cells") or {}
@@ -75,7 +81,7 @@ def build_item(
     # The page states the year in its own 年度 column. Reading it from the
     # filename works most of the time and is wrong the rest of it, as with the
     # two A51 links that print the same name for different years.
-    year = year_from_nendo(cells.get("年度", "")) or parsed.year
+    year = year_from_nendo(nendo_of(cells)) or parsed.year
     start, end = _temporal(year)
 
     # A mesh code names the exact cell the file covers, so it wins. Failing
@@ -92,6 +98,10 @@ def build_item(
 
     props = {
         "datetime": None,
+        # Repeated from the Collection. STAC allows `license` on an Item, and
+        # an Item page with a download button and no terms on it is a trap.
+        "license": license,
+        "ksj:terms": terms,
         "start_datetime": start,
         "end_datetime": end,
         "ksj:identifier": parsed.identifier,
@@ -110,10 +120,11 @@ def build_item(
     if title:
         props["title"] = title
     for label, key in (("地域", "ksj:region"), ("河川", "ksj:river"),
-                       ("形式", "ksj:format"), ("測地系", "ksj:crs"),
-                       ("年度", "ksj:nendo")):
+                       ("形式", "ksj:format"), ("測地系", "ksj:crs")):
         if cells.get(label):
             props[key] = cells[label]
+    if nendo_of(cells):
+        props["ksj:nendo"] = nendo_of(cells)
     if start is None:
         # STAC allows a null datetime only when both ends are present.
         props["datetime"] = "1970-01-01T00:00:00Z"
@@ -150,6 +161,11 @@ def build_item(
             {"rel": "parent", "href": "../collection.json", "type": "application/json"},
             {"rel": "collection", "href": "../collection.json", "type": "application/json"},
             {"rel": "via", "href": page_url, "type": "text/html"},
+            # 9 of 135 pages state no terms at all. An Item page with a
+            # download button, no terms and no way to reach them is the
+            # failure this link exists to prevent.
+            {"rel": "license", "href": AGREEMENT, "type": "text/html",
+             "title": "国土数値情報 利用約款"},
         ],
         "assets": {"source": asset},
     }

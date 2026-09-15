@@ -90,3 +90,23 @@ def test_a_collection_with_no_item_extent_falls_back_to_the_measured_japan_bbox(
     row = {**_row("https://x/P29-23_01_GML.zip", "c.zip"), "cells": {"地域": "北海道開発局"}}
     coll = build_collection("P29", PAGE, [build_item(row, PAGE, "P29", REGIONS)], None, REGIONS)
     assert coll["extent"]["spatial"]["bbox"][0] == REGIONS["全国"]["bbox"]
+
+
+def test_an_item_carries_the_collections_licence_and_terms():
+    # Someone can land on an Item page from a search engine, press Download,
+    # and never see the Collection. The terms have to be on the Item too.
+    row = _row("https://x/N02-25_GML.zip", "N02-25_GML.zip")
+    it = build_item(row, PAGE, "N02", None, "other", "2020年以降：CC_BY_4.0\n上記以外：商用可")
+    assert it["properties"]["license"] == "other"
+    assert "CC_BY_4.0" in it["properties"]["ksj:terms"]
+
+
+def test_the_licence_defaults_to_other_rather_than_to_nothing():
+    it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "X")
+    assert it["properties"]["license"] == "other"
+
+
+def test_every_item_can_reach_the_terms_even_when_its_page_states_none():
+    it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "X", None, "other", "")
+    licence = [link for link in it["links"] if link["rel"] == "license"]
+    assert licence and licence[0]["href"].startswith("https://nlftp.mlit.go.jp/")

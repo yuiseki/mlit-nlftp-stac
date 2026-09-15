@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from mlit_nlftp_stac.page import spdx_from_terms  # noqa: E402
 from mlit_nlftp_stac.stac import build_collection, build_item, build_root, write_json  # noqa: E402
 
 DATA = ROOT / "data"
@@ -95,12 +96,18 @@ def main() -> int:
     collections = []
     for cid, rows in sorted(groups.items()):
         page_url = rows[0]["page_url"]
+        page = pages.get(cid) or {}
+        terms = page.get("terms") or ""
+        license_ = spdx_from_terms(terms)
         items = [
-            build_item({**r, **head.get(r["url"], {})}, page_url, cid, regions) for r in rows
+            build_item(
+                {**r, **head.get(r["url"], {})}, page_url, cid, regions, license_, terms
+            )
+            for r in rows
         ]
         for it in items:
             write_json(out / "collections" / cid / "items" / f"{it['id']}.json", it)
-        coll = build_collection(cid, page_url, items, pages.get(cid), regions)
+        coll = build_collection(cid, page_url, items, page, regions)
         write_json(out / "collections" / cid / "collection.json", coll)
         (out / "collections" / cid / "README.md").write_text(
             f"# {coll['title']}\n\n{coll['description']}\n\n"

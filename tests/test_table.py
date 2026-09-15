@@ -76,3 +76,41 @@ def test_a_row_holding_two_links_keeps_both_and_labels_neither():
     rows = {r["filename"]: r for r in _rows()}
     assert rows["A46-21_58_GML.zip"]["cells"] == {}
     assert rows["A46-20_36_GML.zip"]["cells"] == {}
+
+
+def test_the_title_leads_with_the_year_so_it_sorts():
+    from mlit_nlftp_stac.table import title_from_cells
+
+    assert title_from_cells(
+        {"地域": "東京", "年度": "2026年（令和8年）", "ファイル名": "x.zip"}
+    ) == "2026_東京（令和8年）"
+
+
+def test_the_era_only_form_keeps_its_era():
+    from mlit_nlftp_stac.table import title_from_cells
+
+    assert title_from_cells({"地域": "全国", "年度": "平成25年"}) == "2013_全国（平成25年）"
+
+
+def test_the_other_descriptive_columns_stay_after_the_region():
+    from mlit_nlftp_stac.table import title_from_cells
+
+    title = title_from_cells(
+        {"地域": "北海道開発局", "形式": "GML形式", "河川": "洪水予報河川",
+         "年度": "2025年（令和7年）", "測地系": "世界測地系"}
+    )
+    assert title == "2025_北海道開発局 GML形式 洪水予報河川（令和7年）"
+
+
+def test_a_row_with_no_year_keeps_what_it_has():
+    from mlit_nlftp_stac.table import title_from_cells
+
+    assert title_from_cells({"地域": "全国"}) == "全国"
+
+
+def test_the_vintage_column_is_called_年_on_some_pages():
+    from mlit_nlftp_stac.table import title_from_cells
+
+    # N03 heads that column 年, not 年度. Looking only for 年度 leaves the
+    # year in the body and takes the real one from the filename.
+    assert title_from_cells({"地域": "東京", "年": "2026年（令和8年）"}) == "2026_東京（令和8年）"

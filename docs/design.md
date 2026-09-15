@@ -96,6 +96,15 @@ and the table's header names those columns: 地域, 形式, 河川, 測地系, �
 Taking the row gives an Item a title a person can read, and gives the year
 from the page rather than from a guess at the filename.
 
+The title leads with the year, as `2026_東京（令和8年）`, because STAC Browser
+sorts on the title and a list of files that sorts by year is the one a person
+wants. The era is kept because that is how the page names a vintage, and
+someone looking for 令和6年度版 should find it by eye.
+
+The vintage column is headed 年度 on most pages and 年 on others, N03 among
+them. Looking only for 年度 leaves those pages taking the year from the
+filename and printing it twice in the title.
+
 Sortable pages write their headers as `地域 ▲ ▼`, so the arrows are stripped
 before the label is used as a key; without that, 4,739 rows lose every cell
 and no error is raised.
@@ -106,6 +115,14 @@ way to tell which. Both links are kept and neither gets the cells, so eight
 Items have no title. Taking the first link per row instead would drop four
 files; giving both rows the cells would label four files with another file's
 region and year.
+
+## Licensing on Items, not only Collections
+
+STAC puts `license` on a Collection, and a reader who walks down from the
+catalog sees it there. A reader who arrives at an Item from a search engine
+does not: they see a title, a map and a download button. So each Item repeats
+its Collection's `license` and `ksj:terms`, and carries a `license` link of its
+own. Nine of 135 pages state no terms at all; those Items still have the link.
 
 ## Dates
 

@@ -64,10 +64,14 @@ description the dataset page gives itself, so the catalog reads as
 and get that SPDX identifier; the rest say something a single identifier
 cannot express and are `other` with their terms quoted verbatim.
 
-Items are titled with the words in their own row of the download table, so a
-file reads as 全国 2025年（令和7年） or
-北海道開発局 GML形式 洪水予報河川･水位周知河川 2025年（令和7年） rather than
-`N02-25_GML`. 99% of them; the rest sit in malformed upstream rows.
+Items are titled with the words in their own row of the download table, with
+the year first so that sorting by title sorts by year: `2025_全国（令和7年）`,
+`2025_北海道開発局 GML形式 洪水予報河川･水位周知河川（令和7年）`. 99% of them;
+the rest sit in malformed upstream rows.
+
+Each Item repeats its Collection's licence and terms and carries its own
+licence link, because an Item page has a download button on it and whoever
+lands there may never see the Collection.
 
 98% of Items carry a footprint, taken either from a mesh code in the filename
 or from the extent of the matching prefecture in N03 行政区域. The remainder

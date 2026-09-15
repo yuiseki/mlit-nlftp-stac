@@ -21,6 +21,18 @@ _TAG = re.compile(r"<[^>]+>")
 # Cells that describe the download mechanism rather than the data.
 _NOT_TITLE = {"測地系", "ファイル容量", "ファイル名", "ダウンロード", "一括DL", "容量"}
 
+# The vintage column is called 年度 on most pages and 年 on others (N03 among
+# them). Looking only for 年度 leaves those pages taking the year from the
+# filename and printing it twice in the title.
+_NENDO_KEYS = ("年度", "年")
+
+
+def nendo_of(cells: Dict[str, str]) -> str:
+    for key in _NENDO_KEYS:
+        if cells.get(key):
+            return cells[key]
+    return ""
+
 _ERAS = {"令和": 2018, "平成": 1988, "昭和": 1925, "大正": 1911, "明治": 1867}
 
 # Sortable tables put arrows in the header cell, so the same column is called
@@ -96,12 +108,35 @@ def year_from_nendo(nendo: str) -> Optional[int]:
     return None
 
 
+def wareki_from_nendo(nendo: str) -> str:
+    """`2025年（令和7年）` -> `令和7年`, `平成25年` -> `平成25年`, else ``."""
+    if not nendo:
+        return ""
+    for era in _ERAS:
+        m = re.search(rf"{era}\s*(?:元|\d+)\s*年", nendo)
+        if m:
+            return m.group(0).replace(" ", "")
+    return ""
+
+
 def title_from_cells(cells: Dict[str, str]) -> str:
-    """The columns that say what the file is, in the page's own order."""
-    parts = [v for k, v in cells.items() if k not in _NOT_TITLE]
-    seen, out = set(), []
+    """`2026_東京（令和8年）`.
+
+    The year leads because STAC Browser sorts on the title, and a list of
+    files that sorts by year is the one a person wants. The era is kept
+    because that is how the page names the vintage, and someone looking for
+    「令和6年度版」 should be able to find it by eye.
+    """
+    year = year_from_nendo(nendo_of(cells))
+    parts = [v for k, v in cells.items() if k not in _NOT_TITLE and k not in _NENDO_KEYS]
+    seen, rest = set(), []
     for p in parts:
         if p not in seen:
             seen.add(p)
-            out.append(p)
-    return " ".join(out)
+            rest.append(p)
+    body = " ".join(rest)
+    if year is None:
+        return body
+    wareki = wareki_from_nendo(nendo_of(cells))
+    head = f"{year}_{body}" if body else str(year)
+    return f"{head}（{wareki}）" if wareki else head
