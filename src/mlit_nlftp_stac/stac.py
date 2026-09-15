@@ -642,6 +642,11 @@ def build_root(
              "title": "国土数値情報ダウンロードサイト"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown",
              "title": "README"},
+            # The same Items as one table, for the question a tree cannot
+            # answer: everything matching a filter, across all 110 datasets.
+            {"rel": "alternate", "href": "./items.parquet",
+             "type": "application/vnd.apache.parquet",
+             "title": "items.parquet — 全 Item を 1 つの GeoParquet に"},
             {
                 "rel": "child",
                 "href": "./collections/catalog.json",

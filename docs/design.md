@@ -140,6 +140,25 @@ does not: they see a title, a map and a download button. So each Item repeats
 its Collection's `license` and `ksj:terms`, and carries a `license` link of its
 own. Nine of 135 pages state no terms at all; those Items still have the link.
 
+## One table beside the tree
+
+A catalog of 21,603 files answers "what is in this dataset" by being read, and
+"which files cover this place, from this year, that I may redistribute" only
+by being read whole. Both agents named that as their largest cost, and it is
+the one thing a static tree genuinely cannot do.
+
+`items.parquet` is the same Items as one row each, following the
+stac-geoparquet convention: the fields worth filtering on promoted to columns,
+the geometry written with a covering bbox, and the rows in Hilbert order so a
+reader asking about one prefecture skips most of the row groups. Items with no
+footprint sort last, since they have no place in that order.
+
+The whole catalog is 1.1 MB, which is small enough that the question of
+whether to host a search API does not arise. The JSON remains authoritative;
+this is an index built from it by `09_geoparquet.py`, offline, from the files
+`03_build_stac.py` just wrote, so the two cannot disagree except by being run
+at different times.
+
 ## The columns, and what their values mean
 
 Two agents were given a research question and this catalog. Both found the

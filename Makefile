@@ -8,6 +8,7 @@ help:
 	@echo "make head      just the HEAD sweep; resumable"
 	@echo "make build     data/ -> catalog/  (offline, seconds)"
 	@echo "               BASE_URL=... sets the absolute self links"
+	@echo "               also writes catalog/items.parquet, the whole catalog as one table"
 	@echo "make validate  check catalog/"
 	@echo "make serve     serve catalog/ on :8765 with CORS, for other clients"
 	@echo "make start     browse catalog/ in STAC Browser on :8080"
@@ -26,6 +27,7 @@ BASE_URL ?= https://stac.yuiseki.net/mlit-nlftp
 
 build:
 	$(PY) scripts/03_build_stac.py --base-url "$(BASE_URL)"
+	$(PY) scripts/09_geoparquet.py --base-url "$(BASE_URL)"
 
 validate:
 	$(PY) scripts/04_validate.py

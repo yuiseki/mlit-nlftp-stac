@@ -34,6 +34,20 @@ curl -s https://stac.yuiseki.net/mlit-nlftp/collections/A40/items/A40-16_39_GML.
   | jq -r '.assets.source.href, .properties.license, .properties["ksj:terms"]'
 ```
 
+Everything at once, as one table:
+
+```bash
+duckdb -c "
+  select collection_title, count(*) files, round(sum(file_size)/1e9, 2) gb
+    from 'https://stac.yuiseki.net/mlit-nlftp/items.parquet'
+   where redistribution = 'allowed' and year >= 2023
+   group by 1 order by gb desc limit 5"
+# 洪水浸水想定区域データ (A31a)                        795  16.88
+# 250mメッシュ別将来推計人口データ（R6国政局推計）       168  12.01
+```
+
+1.1 MB for all 21,603 items. See [Query it whole](#query-it-whole).
+
 ## Three ways in
 
 ```
@@ -59,6 +73,26 @@ below for why this is an Item-level question.
 each carrying the name of the dataset it came from. 56 such catalogs, 16,613 links.
 "What is there for this prefecture?" is the question people actually ask, and
 answering it from Collections alone meant opening all 110.
+
+## Query it whole
+
+`items.parquet` is every Item as one row: id, collection, title, year,
+licence, redistribution, region, the download URL, the measured size, and the
+footprint. 21,603 rows in 1.1 MB, spatially ordered and written with a
+covering bbox, so a reader asking about one prefecture skips most of the file.
+
+It answers what a tree cannot: everything matching a filter, across all 110
+datasets, in one request. The JSON stays authoritative; this is an index.
+
+```sql
+select region, count(*)
+  from 'https://stac.yuiseki.net/mlit-nlftp/items.parquet'
+ where redistribution = 'allowed' and collection = 'P04'
+ group by 1 order by 2 desc;
+```
+
+Spatial predicates need DuckDB's spatial extension. Use 1.5.5 or later: 1.3.2
+crashes on it.
 
 ## What an Item tells you
 
