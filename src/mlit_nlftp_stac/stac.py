@@ -103,7 +103,7 @@ def build_item(
     # The licence belongs to the year, not to the dataset: 鉄道データ is
     # CC BY 4.0 from 2020 and 商用可 before it. Resolving it here is the only
     # place it can be right, because this is the only place a year is known.
-    spdx, redistribution, applied = resolve_terms(terms, year)
+    spdx, redistribution, applied = resolve_terms(terms, year, cells.get("地域"))
     props = {
         "datetime": None,
         # Repeated from the Collection. STAC allows `license` on an Item, and

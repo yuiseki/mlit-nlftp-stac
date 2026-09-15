@@ -30,15 +30,33 @@ _CC = re.compile(r"CC[_ ]?BY[_ ]?4\.0", re.I)
 _RESTRICTED = "一部制限"
 _ERAS = {"令和": 2018, "平成": 1988, "昭和": 1925}
 
-# A caveat that does not name a year but does mean the answer is not simply
-# the licence: N03 is CC BY 4.0 「※本データを二次利用する場合には、国土地理院に
-# 申請等必要な場合があります。」, which is exactly the case this is for.
-_CAVEATS = ("申請", "承諾", "問い合わせ", "連絡を行う", "遵守すること", "確認してください")
+# A caveat about *permission*, which withholds what the licence grants: N03's
+# 「※本データを二次利用する場合には、国土地理院に申請等必要な場合があります。」
+# is the case this is for. Caveats about accuracy and legal standing are not
+# licence conditions and must not be read as ones: 「確認してください」 appears
+# in nearly every KSJ disclaimer, and treating it as a condition withheld
+# permission that A52 砂防指定地 actually grants.
+# Phrases, not words. A52 砂防指定地 says 「申請資料や根拠を示す必要がある資料
+# への利用はできません」, which is about what the data may be used for, while
+# N03 says 「申請等必要な場合があります」, which is about needing permission
+# first. Matching the bare word 申請 confuses the two.
+_CAVEATS = (
+    "申請等必要", "申請が必要", "申請を要", "承諾を得", "許諾を得",
+    "連絡を行う", "商用利用希望",
+)
+
+# 一部制限 means the conditions belong to whoever supplied the data, and the
+# page lists them by prefecture. Where it does, an Item that knows its own
+# prefecture can be resolved after all.
+_OPEN_HEADING = re.compile(r"[＜<].*利用可.*再配信可.*[＞>]")
+_ANY_HEADING = re.compile(r"^[＜<].+[＞>]$")
 
 
-def _licence_of(text: str) -> Tuple[str, str]:
+def _licence_of(text: str, region: Optional[str] = None) -> Tuple[str, str]:
     """(spdx, redistribution) for a chunk of terms with no year scoping."""
     if _RESTRICTED in text:
+        if region and region in open_prefectures(text):
+            return "CC-BY-4.0", ALLOWED
         return "other", CHECK
     if _CC.search(text):
         if any(c in text for c in _CAVEATS):
@@ -69,8 +87,16 @@ def _rules(terms: str) -> List[Tuple[str, str]]:
         line = line.strip()
         if not line:
             continue
-        m = re.match(r"^[＜<](.+?)[＞>]$", line)
-        if m:  # a heading that scopes the lines under it
+        # ＜…＞ on its own line, or ■… at the start of one: A31a heads its
+        # year groups with ■2025年度、2024年度… and the licence follows below.
+        m = re.match(r"^[＜<](.+?)[＞>]$", line) or re.match(r"^■\s*(.+)$", line)
+        # A ＜＞ heading scopes what follows only when it names years. The same
+        # bracket is used to group prefectures (＜オープンデータとしての利用可＞),
+        # and reading that as a year scope leaves every rule yearless and the
+        # whole statement unresolvable.
+        if m and not _years_in(m.group(1))[0]:
+            m = None
+        if m:
             if current_scope is not None:
                 out.append((current_scope, "\n".join(current)))
             current_scope, current = m.group(1), []
@@ -91,11 +117,33 @@ def _rules(terms: str) -> List[Tuple[str, str]]:
     return out
 
 
-def resolve(terms: str, year: Optional[int]) -> Tuple[str, str, str]:
+def _normalise_pref(name: str) -> str:
+    return re.sub(r"[都道府県]$", "", name.strip()) if name.strip() != "北海道" else "北海道"
+
+
+def open_prefectures(terms: str) -> List[str]:
+    """The prefectures a 一部制限 page names as free to redistribute."""
+    lines = terms.splitlines()
+    out: List[str] = []
+    collecting = False
+    for line in lines:
+        line = line.strip()
+        if _OPEN_HEADING.search(line):
+            collecting = True
+            continue
+        if collecting:
+            if _ANY_HEADING.match(line) or line.startswith(("■", "【", "・")):
+                break
+            out += [_normalise_pref(p) for p in re.split(r"[、,]", line) if p.strip()]
+    return [p for p in out if p]
+
+
+def resolve(terms: str, year: Optional[int], region: Optional[str] = None) -> Tuple[str, str, str]:
     """(spdx, redistribution, the wording this came from).
 
-    `year` is the Item's year. Without one, terms that vary by year cannot be
-    resolved and the answer is `check`.
+    `year` is the Item's year; without one, terms that vary by year cannot be
+    resolved. `region` is the Item's 地域, which resolves a 一部制限 page that
+    lists its prefectures.
     """
     terms = (terms or "").strip()
     if not terms:
@@ -104,7 +152,7 @@ def resolve(terms: str, year: Optional[int]) -> Tuple[str, str, str]:
     rules = _rules(terms)
     scoped = [(s, b) for s, b in rules if s]
     if not scoped:
-        spdx, redis = _licence_of(terms)
+        spdx, redis = _licence_of(terms, region)
         return spdx, redis, terms
 
     if year is None:
@@ -119,9 +167,9 @@ def resolve(terms: str, year: Optional[int]) -> Tuple[str, str, str]:
         if not years:
             continue
         if (onward and year >= min(years)) or (not onward and year in years):
-            spdx, redis = _licence_of(body)
+            spdx, redis = _licence_of(body, region)
             return spdx, redis, f"{scope}：{body.splitlines()[0]}"
     if fallback is not None:
-        spdx, redis = _licence_of(fallback)
+        spdx, redis = _licence_of(fallback, region)
         return spdx, redis, f"上記以外：{fallback.splitlines()[0]}"
     return "other", CHECK, terms
