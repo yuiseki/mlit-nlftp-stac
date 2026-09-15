@@ -17,6 +17,7 @@ from .page import spdx_from_terms
 from .table import nendo_of, title_from_cells, year_from_nendo
 
 STAC_VERSION = "1.1.0"
+ROOT_TITLE = "国土数値情報 (MLIT National Land Numerical Information)"
 FILE_EXT = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
 
 # Last resort only, for a Collection with no Item extent and no
@@ -66,6 +67,7 @@ def build_item(
     license: str = "other",
     terms: str = "",
     base_url: str = "",
+    collection_title: str = "",
 ) -> dict:
     """`row` is one harvested link, optionally carrying HEAD results.
 
@@ -158,9 +160,12 @@ def build_item(
         "properties": props,
         "collection": collection_id,
         "links": [
-            {"rel": "root", "href": "../../../catalog.json", "type": "application/json"},
-            {"rel": "parent", "href": "../collection.json", "type": "application/json"},
-            {"rel": "collection", "href": "../collection.json", "type": "application/json"},
+            {"rel": "root", "href": "../../../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../collection.json", "type": "application/json",
+             "title": collection_title or collection_id},
+            {"rel": "collection", "href": "../collection.json", "type": "application/json",
+             "title": collection_title or collection_id},
             {"rel": "via", "href": page_url, "type": "text/html"},
             # 9 of 135 pages state no terms at all. An Item page with a
             # download button, no terms and no way to reach them is the
@@ -263,8 +268,10 @@ def build_collection(
             if page.get("fields", {}).get(label)
         },
         "links": [
-            {"rel": "root", "href": "../catalog.json", "type": "application/json"},
-            {"rel": "parent", "href": "../catalog.json", "type": "application/json"},
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
             {
                 "rel": "self",
                 "href": (
@@ -324,8 +331,10 @@ def build_region_catalog(
         "ksj:region": name,
         "ksj:region_code": code,
         "links": [
-            {"rel": "root", "href": "../catalog.json", "type": "application/json"},
-            {"rel": "parent", "href": "./catalog.json", "type": "application/json"},
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "./catalog.json", "type": "application/json",
+             "title": "地域別 (by region)"},
             {
                 "rel": "self",
                 "href": f"{base_url}/regions/{slug}.json" if base_url else f"./{slug}.json",
@@ -356,8 +365,10 @@ def build_regions_root(regions: Iterable[dict], base_url: str = "") -> dict:
             "「この県には何があるか」に答えるためのものです。"
         ),
         "links": [
-            {"rel": "root", "href": "../catalog.json", "type": "application/json"},
-            {"rel": "parent", "href": "../catalog.json", "type": "application/json"},
+            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": ROOT_TITLE},
             {
                 "rel": "self",
                 "href": f"{base_url}/regions/catalog.json" if base_url else "./catalog.json",
@@ -381,7 +392,7 @@ def build_root(collections: Iterable[dict], base_url: str = "", regions: bool = 
         "type": "Catalog",
         "stac_version": STAC_VERSION,
         "id": "mlit-nlftp",
-        "title": "国土数値情報 (MLIT National Land Numerical Information)",
+        "title": ROOT_TITLE,
         "description": (
             "A mirror of the download index at https://nlftp.mlit.go.jp/ksj/. "
             "One Collection per dataset, one Item per downloadable file. "

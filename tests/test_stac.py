@@ -173,3 +173,15 @@ def test_the_region_index_is_only_a_child_of_the_root_when_it_exists():
     assert not [x for x in without["links"] if x["href"].endswith("regions/catalog.json")]
     with_ = build_root([], "", regions=True)
     assert [x for x in with_["links"] if x["href"].endswith("regions/catalog.json")]
+
+
+def test_every_link_carries_a_title():
+    # The spec asks for a title on item, child, parent and root links "even if
+    # it repeats several times", so a client can render a readable tree
+    # without opening each destination.
+    it = build_item(_row("https://x/a.zip", "a.zip"), PAGE, "N02", None, "other", "", "",
+                    "鉄道データ (N02)")
+    for link in it["links"]:
+        if link["rel"] in ("root", "parent", "collection"):
+            assert link.get("title"), link
+    assert [x for x in it["links"] if x["rel"] == "parent"][0]["title"] == "鉄道データ (N02)"

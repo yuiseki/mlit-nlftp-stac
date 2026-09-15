@@ -115,10 +115,11 @@ def main() -> int:
         page = pages.get(cid) or {}
         terms = page.get("terms") or ""
         license_ = spdx_from_terms(terms)
+        coll_title = f"{page.get('title') or cid} ({cid})"
         items = [
             build_item(
                 {**r, **head.get(r["url"], {})}, page_url, cid, regions,
-                license_, terms, base_url,
+                license_, terms, base_url, coll_title,
             )
             for r in rows
         ]
