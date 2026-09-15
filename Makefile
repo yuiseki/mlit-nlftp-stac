@@ -12,7 +12,7 @@ help:
 	@echo "make serve     serve catalog/ on :8765 with CORS, for other clients"
 	@echo "make start     browse catalog/ in STAC Browser on :8080"
 	@echo "make test      unit tests"
-	@echo "make install-catalog   rsync catalog/ to \$$(CATALOG_ROOT) (needs sudo)"
+	@echo "make install-catalog   rsync catalog/ to \$$(CATALOG_ROOT)"
 
 index: links head
 
@@ -39,11 +39,11 @@ start:
 test:
 	$(PY) -m pytest tests -q
 
-# stac.yuiseki.net serves /srv/stac, so a second catalog is another directory
-# next to this one rather than another hostname.
-CATALOG_ROOT ?= /srv/stac/mlit-nlftp
+# stac.yuiseki.net serves /data/www/html/stac, so a second catalog is another
+# directory next to this one rather than another hostname.
+CATALOG_ROOT ?= /data/www/html/stac/mlit-nlftp
 
-install-catalog: 
+install-catalog:
 	@test -f catalog/catalog.json || { echo "catalog/ is empty; run make build" >&2; exit 1; }
 	mkdir -p $(CATALOG_ROOT)
 	rsync -a --delete catalog/ $(CATALOG_ROOT)/

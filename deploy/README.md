@@ -4,15 +4,15 @@ The catalog is a directory of static files. Anything that serves files over
 HTTPS with CORS will do; what follows is how it is served from this machine,
 which already runs nginx and a Cloudflare Tunnel.
 
-The published location is `https://stac.yuiseki.net/mlit-nlftp/`. One host,
-one directory per catalog, so the next catalog is a sibling directory rather
-than another hostname.
+The published location is `https://stac.yuiseki.net/mlit-nlftp/`, served from
+`/data/www/html/stac/mlit-nlftp`. One host, one directory per catalog, so the
+next catalog is a sibling directory rather than another hostname.
 
 ## 1. Build and stage
 
 ```bash
 make build                    # BASE_URL defaults to the published location
-sudo make install-catalog     # rsync catalog/ -> /srv/stac/mlit-nlftp
+make install-catalog          # rsync catalog/ -> /data/www/html/stac/mlit-nlftp
 ```
 
 `install-catalog` uses `rsync --delete`, so a file that disappears upstream
@@ -25,11 +25,16 @@ different prefix.
 ## 2. Serve it
 
 ```bash
-sudo cp deploy/nginx-mlit-nlftp-stac.conf /etc/nginx/sites-available/stac
-sudo ln -s ../sites-available/stac /etc/nginx/sites-enabled/stac
+sudo cp deploy/stac.yuiseki.net.conf /etc/nginx/sites-available/stac.yuiseki.net
+sudo ln -s ../sites-available/stac.yuiseki.net /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-curl -s localhost:8088/mlit-nlftp/catalog.json | head -c 120
+curl -s -H 'Host: stac.yuiseki.net' localhost/mlit-nlftp/catalog.json | head -c 120
 ```
+
+The block listens on port 80 with a `server_name`, the same shape as the
+`z.yuiseki.net` block already in `sites-available/default`. The tunnel passes
+the Host header through and nginx dispatches on it, so another catalog host
+needs no new port.
 
 ## 3. Publish the hostname
 
@@ -39,7 +44,7 @@ Cloudflare dashboard rather than on disk. Add a public hostname there:
 
 - Zero Trust → Networks → Tunnels → this tunnel → Public Hostnames → Add
 - Hostname: `stac.yuiseki.net`
-- Service: `HTTP` → `localhost:8088`
+- Service: `HTTP` → `localhost:80`
 
 ## Why a path and not a subdomain per catalog
 
