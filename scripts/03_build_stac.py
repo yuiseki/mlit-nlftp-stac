@@ -130,15 +130,19 @@ def main() -> int:
         license_ = spdx_from_terms(terms)
         coll_title = f"{page.get('title') or cid} ({cid})"
         identifier = page.get("identifier") or cid
-        # The newest year per (地域, 形式), so an Item can say whether it is
-        # the current file for its own prefecture rather than for the dataset.
+        # The newest year per 地域, so an Item can say whether it is the
+        # current file for its own prefecture rather than for the dataset.
+        # Keyed on the region alone: 形式 is written inconsistently between
+        # vintages -- P11 calls it 「GML、シェープ形式」 in 2010 and
+        # 「シェープ、geojson形式」 in 2022 -- so including it made each old
+        # spelling its own bucket and marked a 12-year-old file as current.
         latest_years: dict = {}
         for r in rows:
             cells = r.get("cells") or {}
             y = year_from_nendo(nendo_of(cells))
             if y is None:
                 continue
-            key = (cells.get("地域") or "", cells.get("形式") or "")
+            key = cells.get("地域") or ""
             latest_years[key] = max(latest_years.get(key, 0), y)
         items = [
             build_item(

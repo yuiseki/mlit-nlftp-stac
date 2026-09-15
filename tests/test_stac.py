@@ -214,8 +214,10 @@ def test_every_link_carries_a_title():
 def test_an_item_says_whether_it_is_the_newest_for_its_own_region():
     # A40 is current to 2024 for some prefectures and stops at 2016 for 高知.
     # Asking "is this the file to use?" meant listing every item and comparing
-    # titles by eye.
-    latest = {("高知", ""): 2016, ("東京", ""): 2024}
+    # titles by eye. Keyed on the region alone: 形式 is spelled differently
+    # between vintages, and including it made each old spelling its own
+    # bucket, so a 2010 file came back as current.
+    latest = {"高知": 2016, "東京": 2024}
     old = _row("https://x/A40-16_39_GML.zip", "a.zip")
     old["cells"] = {"地域": "高知", "年度": "2016年（平成28年）"}
     assert build_item(old, PAGE, "A40", None, "other", "", "", "", "A40", latest)[
@@ -224,6 +226,14 @@ def test_an_item_says_whether_it_is_the_newest_for_its_own_region():
     tokyo_old = _row("https://x/A40-16_13_GML.zip", "b.zip")
     tokyo_old["cells"] = {"地域": "東京", "年度": "2016年（平成28年）"}
     assert build_item(tokyo_old, PAGE, "A40", None, "other", "", "", "", "A40", latest)[
+        "properties"]["ksj:is_latest"] is False
+
+    # A different spelling of 形式 in the same region must not create a second
+    # "latest": that is how a 2010 file was marked current.
+    other_format = _row("https://x/A40-16_13_SHP.zip", "c.zip")
+    other_format["cells"] = {"地域": "東京", "形式": "シェープ、geojson形式",
+                             "年度": "2016年（平成28年）"}
+    assert build_item(other_format, PAGE, "A40", None, "other", "", "", "", "A40", latest)[
         "properties"]["ksj:is_latest"] is False
 
 

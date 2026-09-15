@@ -151,7 +151,7 @@ def build_item(
     # current file for 高知 meant listing every Item of the dataset and
     # comparing titles by eye.
     if latest_years is not None and year is not None:
-        key = (cells.get("地域") or "", cells.get("形式") or "")
+        key = cells.get("地域") or ""
         if key in latest_years:
             props["ksj:is_latest"] = year == latest_years[key]
     if start is None:

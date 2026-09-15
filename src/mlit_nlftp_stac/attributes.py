@@ -69,13 +69,27 @@ def parse_attributes(page_html: str, page_url: str = BASE) -> List[Dict]:
     for row in _ROW.findall(page_html):
         cells = _CELL.findall(row)
         texts = [_text(body) for _, body in cells]
+        # A row whose variant cell is spanned from above starts with an empty
+        # one: P20 does it for 地震災害（P20_007）, which was dropped entirely,
+        # leaving a gap in the numbering and a column nobody could explain.
+        while texts and not texts[0]:
+            texts.pop(0)
         if not texts:
             continue
 
         if any("属性名" in t for t in texts):  # a header that opens a variant
             label = next((t for t in texts if "属性情報" in t), "")
             m = _SHAPEFILE.search(label)
-            current = {"shapefile": m.group(1) if m else None, "columns": []}
+            # Several datasets publish more than one attribute table and the
+            # only thing telling them apart is the page's own wording, which
+            # names a shapefile for some and a vintage for others. Keeping the
+            # label is the difference between two variants a reader can tell
+            # apart and two they cannot.
+            current = {
+                "shapefile": m.group(1) if m else None,
+                "label": label or None,
+                "columns": [],
+            }
             variants.append(current)
             continue
 

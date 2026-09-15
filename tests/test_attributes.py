@@ -20,6 +20,12 @@ def test_a_variant_per_shapefile():
     ]
 
 
+def test_a_variant_keeps_the_label_the_page_gave_it():
+    # When there is no .shp in the label the page still says something, and
+    # with two tables per dataset that wording is all a reader has.
+    assert _variants()[0]["label"].startswith("属性情報")
+
+
 def test_a_column_carries_its_human_name_and_its_shp_name():
     col = _variants()[0]["columns"][0]
     assert col["name"] == "鉄道区分"
@@ -92,3 +98,17 @@ def test_a_row_with_no_description_does_not_put_the_type_in_it():
     assert cols["P20_005"]["type"] == "integer"
     assert cols["P20_008"]["description"] == ""
     assert cols["P20_008"]["type"] == "boolean"
+
+
+SPANNED = """<html><body><table>
+<tr><th rowspan="3">属性情報</th><th>属性名<br>（かっこ内はshp属性名）</th><th>説明</th><th>属性の型</th></tr>
+<tr><td>施設規模（P20_006）</td><td>避難施設の面積</td><td>文字列型</td></tr>
+<tr><td></td><td>地震災害（P20_007）</td><td>真偽値型</td></tr>
+</table></body></html>"""
+
+
+def test_a_row_indented_by_a_spanned_cell_is_still_a_column():
+    # P20_007 sat behind an empty first cell and vanished, which left a gap in
+    # the numbering and a column in the data that the catalog could not name.
+    cols = [c["column"] for c in parse_attributes(SPANNED)[0]["columns"]]
+    assert cols == ["P20_006", "P20_007"]

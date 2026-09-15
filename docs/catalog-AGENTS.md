@@ -45,13 +45,25 @@ declared_size last_modified etag item_href geometry`.
 Spatial predicates need DuckDB's spatial extension, version 1.5.5 or later.
 1.3.2 crashes on it.
 
+**A stale copy will lie to you.** The CDN in front of this host has served a
+`items.parquet` two columns out of date, and a 404 for a path that existed,
+long after the origin was right. If a column the list above names is missing,
+or a licence disagrees with the Item's own JSON, you have an old copy. Add a
+query string to get past it:
+
+```bash
+curl -s "https://stac.yuiseki.net/mlit-nlftp/items.parquet?cb=$(date +%s)" -o items.parquet
+```
+
+The Item JSON is authoritative. `items.parquet` is built from it.
+
 ## Picking the right file
 
 A dataset's newest year is not the same in every prefecture. 津波浸水想定 (A40)
 is current to 2024 in most places and stops at 2016 in 高知 and 徳島. So:
 
-- `ksj:is_latest` on an Item is computed **per region and per format**, not
-  per dataset. Filter on it.
+- `ksj:is_latest` on an Item is computed **per region**, not per dataset.
+  Filter on it.
 - `ksj:latest_year` on a Collection is the newest year anywhere in it, which
   is not a promise about your prefecture.
 - Item titles start with the year (`2016_高知（平成28年） — 津波浸水想定データ
@@ -104,6 +116,11 @@ curl -s .../codelists/RailwayClassCd.json | jq '.values[] | select(.value=="13")
 # {"value":"13","label":"鋼索鉄道","description":"車両にロープを緊結して…"}
 ```
 
+A dataset can have more than one variant, and the page does not always say
+which vintage each belongs to: P11 has two tables in which `P11_002` is
+バス事業者名 in one and バス区分 in the other, and neither names a shapefile.
+When two variants disagree about a column, open the file to see which you got.
+
 `table:columns` is also emitted, but only for the 80 datasets that ship a
 single shapefile. 105 of 110 datasets have schemas; five state none upstream.
 Nine code lists are spreadsheets rather than pages and are not read.
@@ -131,6 +148,12 @@ Shapefiles are Shift-JIS in older vintages and both encodings in newer ones.
   2070年まで, the older ones 平成27年の国勢調査 and 2050年まで.
 - **Upstream prose is quoted, not corrected.** mesh500r6 describes itself as
   「250mメッシュ別の将来人口」. That is what the page says.
+- **Column names can be placeholders.** The population meshes list
+  `PT00_20XX` and `RTC_20XX`; which years are actually present is in the file,
+  not here.
+- **Nothing links related datasets.** Overlaying 浸水想定 with 避難施設 is a
+  normal thing to want and there is no link from one to the other, nor from an
+  old edition of a dataset to its replacement.
 
 ## Quirks of the upstream site, if you go there
 
