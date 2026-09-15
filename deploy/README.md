@@ -46,6 +46,20 @@ Cloudflare dashboard rather than on disk. Add a public hostname there:
 - Hostname: `stac.yuiseki.net`
 - Service: `HTTP` → `localhost:80`
 
+## After a deploy, the edge may still hold the old answer
+
+Cloudflare caches a 404. A request made before the vhost existed comes back
+as `cf-cache-status: HIT` with the old 404 long after the origin is fixed, so
+a failed check after a deploy means nothing until the cache is ruled out. Add
+a query string to see the origin:
+
+```bash
+curl -sI "https://stac.yuiseki.net/mlit-nlftp/catalog.json?cb=$(date +%s)"
+```
+
+If that is 200 and the plain URL is 404, the deploy worked and the edge is
+stale. Purge it, or wait.
+
 ## Why a path and not a subdomain per catalog
 
 Cloudflare's Universal SSL covers the apex and **first-level subdomains only**
