@@ -272,7 +272,8 @@ def collection_agents(
     parts = [f"# AGENTS.md — {coll['title']}\n"]
     parts.append(
         f"{len(items)} files, {_gb(total) if total else 'size unmeasured'}"
-        + (f", {years[0]}–{years[-1]}" if years else "")
+        + (f", {years[0]}" if len(years) == 1
+           else f", {years[0]}–{years[-1]}" if years else "")
         + ".\n"
     )
 

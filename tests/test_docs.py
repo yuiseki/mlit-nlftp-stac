@@ -103,3 +103,9 @@ def test_licenses_agents_states_what_check_means():
     ])
     assert "| `check` | 8 |" in agents
     assert "一部制限" in agents
+
+
+def test_a_single_year_is_not_printed_as_a_range():
+    one = {**COLL, "ksj:years": [2012]}
+    assert ", 2012." in docs.collection_agents(one, ITEMS)
+    assert "2012–2012" not in docs.collection_agents(one, ITEMS)
