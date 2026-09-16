@@ -203,7 +203,13 @@ def main() -> int:
                 entry = {"id": it["id"], "title": it["properties"].get("title") or it["id"],
                          "region": it["properties"].get("ksj:region") or ""}
                 by_year[int(y) if y else 0].append(entry)
-            coll["links"] = [l for l in coll["links"] if l["rel"] != "item"]
+            # The Item links stay on the Collection: STAC expects a Collection
+            # to list its Items, and Portolan PTL-LNK-002 makes it an error not
+            # to (21,426 of them when they were removed). The year children are
+            # navigation added beside them, not instead of them. PTL-CAT-001
+            # then still warns that the flat list is long, so the two rules
+            # cannot both be satisfied by a dataset this size; the warning is
+            # the one worth living with.
             for year in sorted(by_year, reverse=True):
                 rows = sorted(by_year[year], key=lambda e: (e["region"], e["title"]))
                 ydir = out / "collections" / cid / "years" / str(year)
