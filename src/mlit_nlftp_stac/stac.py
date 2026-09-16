@@ -395,8 +395,10 @@ def build_collection(
             {"rel": "license", "href": AGREEMENT, "type": "text/html", "title": "国土数値情報 利用約款"},
             {"rel": "via", "href": page_url, "type": "text/html"},
             {"rel": "describedby", "href": "./README.md", "type": "text/markdown"},
+            {"rel": "agents", "href": "./AGENTS.md", "type": "text/markdown",
+             "title": "AGENTS.md"},
             {"rel": "agents", "href": "../../AGENTS.md", "type": "text/markdown",
-             "title": "AGENTS.md — how to get an answer out of this catalog"},
+             "title": "AGENTS.md — the whole catalog"},
         ]
         + [
             {
@@ -421,6 +423,23 @@ def _slug(name: str) -> str:
     """A filename for a Japanese category name. Keeps the name, drops what a
     path cannot hold."""
     return re.sub(r"[\s/\\?#\[\]]+", "-", name).strip("-")
+
+def doc_links(readme: str = "./README.md", agents: str = "./AGENTS.md") -> list:
+    """The two documents Portolan requires beside every catalog.
+
+    `specs/portolan/core.md`: every catalog and sub-catalog MUST contain a
+    catalog.json, an AGENTS.md and a README.md, each referenced in the links
+    array. Serving them is not enough -- the first two rounds of agent testing
+    had an AGENTS.md at the root that nothing linked to, and neither agent
+    found it.
+    """
+    return [
+        {"rel": "describedby", "href": readme, "type": "text/markdown",
+         "title": "README.md"},
+        {"rel": "agents", "href": agents, "type": "text/markdown",
+         "title": "AGENTS.md"},
+    ]
+
 
 def build_category_catalog(name: str, members, base_url: str = "") -> dict:
     """The datasets on one shelf.
@@ -449,6 +468,7 @@ def build_category_catalog(name: str, members, base_url: str = "") -> dict:
                 "type": "application/json",
             },
         ]
+        + doc_links()
         + [
             {
                 "rel": "child",
@@ -483,6 +503,7 @@ def build_categories_root(categories, base_url: str = "") -> dict:
                 "type": "application/json",
             },
         ]
+        + doc_links()
         + [
             {
                 "rel": "child",
@@ -541,6 +562,9 @@ def build_license_catalog(
                          if base_url else f"./{collection_id}.json"),
                 "type": "application/json",
             },
+        ]
+        + doc_links()
+        + [
             {"rel": "license", "href": AGREEMENT, "type": "text/html",
              "title": "国土数値情報 利用約款"},
         ]
@@ -577,6 +601,9 @@ def build_license_status_root(status: str, groups: Iterable[dict], base_url: str
                          if base_url else "./catalog.json"),
                 "type": "application/json",
             },
+        ]
+        + doc_links()
+        + [
             {"rel": "license", "href": AGREEMENT, "type": "text/html",
              "title": "国土数値情報 利用約款"},
         ]
@@ -615,6 +642,9 @@ def build_licenses_root(statuses: Iterable[dict], base_url: str = "") -> dict:
                 "href": f"{base_url}/licenses/catalog.json" if base_url else "./catalog.json",
                 "type": "application/json",
             },
+        ]
+        + doc_links()
+        + [
             {"rel": "license", "href": AGREEMENT, "type": "text/html",
              "title": "国土数値情報 利用約款"},
         ]
@@ -667,6 +697,7 @@ def build_region_catalog(
                 "type": "application/json",
             },
         ]
+        + doc_links()
         + [
             {
                 "rel": "item",
@@ -701,6 +732,7 @@ def build_regions_root(regions: Iterable[dict], base_url: str = "") -> dict:
                 "type": "application/json",
             },
         ]
+        + doc_links()
         + [
             {
                 "rel": "child",
@@ -744,6 +776,7 @@ def build_collections_root(collections: Iterable[dict], base_url: str = "") -> d
                 "type": "application/json",
             },
         ]
+        + doc_links()
         + [
             {
                 "rel": "child",

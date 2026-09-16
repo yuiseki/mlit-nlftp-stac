@@ -98,6 +98,22 @@ def main() -> int:
             if not (p.parent / href).resolve().exists():
                 errors.append(f"{rel}: dangling {link['rel']} link: {href}")
 
+    # Portolan: every catalog and every collection MUST have a README.md and
+    # an AGENTS.md beside it, each referenced in the links array. Serving them
+    # is not enough. Two rounds of agent testing ran against a root AGENTS.md
+    # that nothing linked to, and neither reader opened it.
+    for p in sorted(cat.rglob("*.json")):
+        d = json.loads(p.read_text())
+        if d.get("type") not in ("Catalog", "Collection"):
+            continue
+        rel = p.relative_to(cat)
+        rels = {l.get("rel") for l in d.get("links", [])}
+        for name, want in (("README.md", "describedby"), ("AGENTS.md", "agents")):
+            if not (p.parent / name).exists():
+                errors.append(f"{rel}: no {name} beside it")
+            if want not in rels:
+                errors.append(f"{rel}: no rel={want} link")
+
     # An editorial link must point both ways: a reader arriving at either
     # dataset should find the other.
     editorial = {}

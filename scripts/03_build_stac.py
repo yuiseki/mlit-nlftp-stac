@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from mlit_nlftp_stac.page import spdx_from_terms  # noqa: E402
 from mlit_nlftp_stac.table import nendo_of, year_from_nendo  # noqa: E402
 from mlit_nlftp_stac.stac import _slug  # noqa: E402
+from mlit_nlftp_stac import docs  # noqa: E402
 from mlit_nlftp_stac.stac import (  # noqa: E402
     REDISTRIBUTION,
     build_collection,
@@ -31,6 +32,13 @@ from mlit_nlftp_stac.stac import (  # noqa: E402
     build_root,
     write_json,
 )
+
+def write_docs(path, readme: str, agents: str) -> None:
+    """The pair Portolan requires beside every catalog.json."""
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "README.md").write_text(readme, encoding="utf-8")
+    (path / "AGENTS.md").write_text(agents, encoding="utf-8")
+
 
 DATA = ROOT / "data"
 
@@ -124,6 +132,8 @@ def main() -> int:
 
     out = Path(args.out)
     collections = []
+    items_by_cid: dict = {}
+    page_url_by_cid: dict = {}
     by_region: dict = {}
     by_license: dict = {}
     by_category: dict = {}
@@ -178,13 +188,11 @@ def main() -> int:
                     slug = url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
                     c["ksj:codelist_href"] = f"../../codelists/{slug}.json"
         write_json(out / "collections" / cid / "collection.json", coll)
-        (out / "collections" / cid / "README.md").write_text(
-            f"# {coll['title']}\n\n{coll['description']}\n\n"
-            f"- Identifier: `{coll['ksj:identifier']}`\n"
-            f"- Files: {len(items)}\n"
-            f"- Source: {page_url}\n"
-            f"- Terms of use (as stated upstream): {coll.get('ksj:terms') or 'not stated on the page'}\n"
-            f"- SPDX: `{coll['license']}`\n", encoding="utf-8")
+        # The docs are written after the link post-processing below, once the
+        # series and editorial links exist: an AGENTS.md that omits "often used
+        # with" would be describing a Collection that no longer matches it.
+        items_by_cid[cid] = items
+        page_url_by_cid[cid] = page_url
         newest = max(
             (int(it["properties"]["start_datetime"][:4]) for it in items
              if it["properties"].get("start_datetime")), default=None)
@@ -240,6 +248,7 @@ def main() -> int:
         )
     if region_index:
         write_json(out / "regions" / "catalog.json", build_regions_root(region_index, base_url))
+        write_docs(out / "regions", *docs.regions_docs(region_index))
         print(f"{len(region_index)} regions, "
               f"{sum(r['count'] for r in region_index)} item links -> {out / 'regions'}")
 
@@ -259,11 +268,21 @@ def main() -> int:
             out / "licenses" / status / "catalog.json",
             build_license_status_root(status, rows, base_url),
         )
+        write_docs(
+            out / "licenses" / status,
+            *docs.license_status_docs(status, REDISTRIBUTION[status][0], rows),
+        )
         status_index.append({"status": status, "count": sum(r["count"] for r in rows)})
         print(f"  {REDISTRIBUTION[status][0].split(' ')[0]:<14} "
               f"{sum(r['count'] for r in rows):>6} 件 / {len(rows)} コレクション")
     if status_index:
         write_json(out / "licenses" / "catalog.json", build_licenses_root(status_index, base_url))
+        write_docs(
+            out / "licenses",
+            *docs.licenses_docs(
+                [{"status": s["status"], "items": s["count"]} for s in status_index]
+            ),
+        )
 
     # One file per code list, referenced from the columns that use it. Kept
     # out of the collections so that a dataset using RiverCodeCd does not
@@ -357,6 +376,19 @@ def main() -> int:
                 write_json(out / "collections" / c["id"] / "collection.json", c)
         print(f"{n} editorial links over {len(combos['combinations'])} pairs")
 
+    # Every Collection gets its own README.md and AGENTS.md, now that its links
+    # are final. Portolan requires both beside every collection.json; the
+    # AGENTS.md is the one that carries the dataset's own caveats, which the
+    # catalog-wide one deliberately no longer states.
+    for c in collections:
+        cid = c["id"]
+        write_docs(
+            out / "collections" / cid,
+            docs.collection_readme(c, len(items_by_cid.get(cid) or []),
+                                   page_url_by_cid.get(cid, "")),
+            docs.collection_agents(c, items_by_cid.get(cid) or [], base_url),
+        )
+
     cat_index = []
     for name, members in sorted(by_category.items(), key=lambda kv: -len(kv[1])):
         write_json(out / "categories" / f"{_slug(name)}.json",
@@ -365,6 +397,7 @@ def main() -> int:
     if cat_index:
         write_json(out / "categories" / "catalog.json",
                    build_categories_root(cat_index, base_url))
+        write_docs(out / "categories", *docs.categories_docs(cat_index))
         print(f"{len(cat_index)} categories -> {out / 'categories'}")
 
     write_json(out / "collections" / "index.json", {
@@ -398,6 +431,7 @@ def main() -> int:
 
     write_json(out / "collections" / "catalog.json",
                build_collections_root(collections, base_url))
+    write_docs(out / "collections", *docs.collections_docs(collections))
     write_json(
         out / "catalog.json",
         build_root(collections, base_url, bool(region_index), bool(status_index),

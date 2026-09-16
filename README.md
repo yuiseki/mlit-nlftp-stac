@@ -66,6 +66,13 @@ Four trees over the same 21,603 Items. A reader arriving with a theme takes
 `AGENTS.md` says which to take, and is linked rather than merely served: an
 unlinked document is not read.
 
+Every catalog and every Collection carries its own `README.md` and `AGENTS.md`,
+as Portolan requires, each referenced from the STAC document (`rel: describedby`
+and `rel: agents`). The per-dataset `AGENTS.md` is generated from that dataset's
+own Items: columns, licence split per file, measured size, and the datasets it
+is usually used with. `make validate` fails if either file is missing or
+unlinked.
+
 **By dataset.** One Collection per KSJ dataset, named as the dataset page
 names itself: `鉄道データ (N02)`, not `N02`. One Item per downloadable zip,
 titled from its own row of the download table with the year first, so sorting

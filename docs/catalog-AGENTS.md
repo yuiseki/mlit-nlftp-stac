@@ -20,11 +20,18 @@ urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "you"}
 
 | You want | Fetch |
 |---|---|
-| everything matching a filter | `items.parquet` (1.1 MB, all 21,603 items) |
+| everything matching a filter | `items.parquet` (1.4 MB, all 21,603 items) |
 | what exists for a prefecture | `regions/<JIS code>.json` |
 | what there is on a theme | `categories/交通.json` and its 13 siblings |
 | what you may republish | `licenses/allowed/catalog.json` |
 | one dataset in detail | `collections/<id>/collection.json` |
+| that dataset's caveats before downloading | `collections/<id>/AGENTS.md` |
+
+Every catalog and every Collection here carries its own `README.md` and
+`AGENTS.md`, linked as `rel: describedby` and `rel: agents`. The per-dataset
+one is generated from that dataset's own Items, so it states the columns, the
+licence split per file, the measured total size and the datasets it is
+usually used with, without you opening anything else.
 
 Do not take a per-dataset fact from this file on trust; count it. An earlier
 version of this page said A40 was "current to 2024 in most places", which was
