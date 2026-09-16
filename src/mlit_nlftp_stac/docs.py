@@ -375,3 +375,138 @@ def collection_agents(
         "for the country is not the newest year everywhere.\n"
     )
     return "\n".join(part.rstrip("\n") for part in parts) + "\n"
+
+
+# --- one leaf --------------------------------------------------------------
+
+def region_docs(code: Optional[str], name: str, entries) -> tuple[str, str]:
+    entries = list(entries)
+    by_coll: dict[str, int] = {}
+    for e in entries:
+        by_coll[e.get("collection", "")] = by_coll.get(e.get("collection", ""), 0) + 1
+    top = sorted(by_coll.items(), key=lambda kv: -kv[1])[:5]
+    readme = _readme(
+        f"{name} ({code})" if code else name,
+        f"国土数値情報のうち {name} を対象とするファイル {len(entries)} 件、"
+        f"{len(by_coll)} データセット。",
+    )
+    agents = f"""# AGENTS.md — {name}
+
+{len(entries)} Items from {len(by_coll)} datasets, indexed by the region they
+cover rather than by the dataset they belong to.
+
+Largest here: """ + ", ".join(f"`{c}` ({n})" for c, n in top) + f""".
+
+Each `rel: item` link carries the dataset's name in its title, so this list
+can be read without opening anything.
+
+- A file covering several prefectures appears under each of them.
+- Nationwide files are not repeated into this catalog. A theme that looks
+  absent here may exist as a 全国 file.
+- `ksj:is_latest` on an Item is computed per region, so the newest year here
+  can be older than the dataset's own `ksj:latest_year`.
+
+To count rather than browse, `../../items.parquet` has a `region` column:
+
+```sql
+select collection_title, count(*)
+  from 'items.parquet' where region = '{name}' group by 1 order by 2 desc;
+```
+"""
+    return readme, agents
+
+
+def license_collection_docs(
+    status: str, label: str, collection_title: str, entries
+) -> tuple[str, str]:
+    entries = list(entries)
+    readme = _readme(
+        f"{collection_title} — {label}",
+        f"{collection_title} のうち、再配布の可否が「{status}」と判定された "
+        f"{len(entries)} 件。判定は各 Item の年次から解決しています。",
+    )
+    agents = f"""# AGENTS.md — {collection_title} / {label}
+
+{len(entries)} Items of this dataset resolved to `{status}`. The rest of the
+dataset may have resolved differently: the licence belongs to the year, not to
+the dataset, so one dataset can appear under two or three statuses.
+
+Read `ksj:terms_applied` on an Item for the sentence that decided it, and
+`ksj:terms` on `../../../collections/` for the full statement. The dataset as a
+whole is described in `../../../collections/`'s own README and AGENTS.
+
+Upstream terms: <{AGREEMENT}>.
+"""
+    return readme, agents
+
+
+def category_docs(name: str, members) -> tuple[str, str]:
+    members = list(members)
+    rows = "\n".join(
+        f"| `{m['id']}` | {m['title']} | {m['count']} |" for m in members
+    )
+    readme = _readme(
+        name,
+        f"国土数値情報のうち「{name}」に分類される {len(members)} データセット。"
+        "分類は JPGIS 一覧ページ自身の見出しです。",
+    )
+    agents = f"""# AGENTS.md — {name}
+
+{len(members)} datasets on this shelf.
+
+| id | dataset | files |
+|---|---|---|
+{rows}
+
+A category is a shelf, not an answer: a question that crosses two shelves needs
+both. Each Collection carries `rel: related` links for the pairs actually used
+together, with a `ksj:reason` on each.
+
+Open `../../collections/<id>/AGENTS.md` before downloading; it states that
+dataset's columns, the licence per file and the measured size.
+"""
+    return readme, agents
+
+
+def year_docs(collection_title: str, year: int, count: int, regions=None) -> tuple[str, str]:
+    regions = list(regions or [])
+    readme = _readme(
+        f"{year} — {collection_title}",
+        f"{collection_title} のうち {year} 年のファイル {count} 件。"
+        + (f"{len(regions)} 地域に分かれています。" if regions else ""),
+    )
+    where = (
+        "Children are regions; open the one you need."
+        if regions
+        else "Items are listed directly, titled with their region."
+    )
+    agents = f"""# AGENTS.md — {collection_title} / {year}
+
+{count} files from one vintage. {where}
+
+A year is a browsing convenience, not a claim that the whole country was
+surveyed that year: a dataset can have 2024 for one prefecture and 2016 for
+the next, which is why `ksj:is_latest` on an Item is per region.
+
+The licence is resolved per year, so every Item here shares one: read
+`ksj:terms_applied` on any of them. Counting across years is a query, not a
+walk: `../../../../items.parquet` has `collection`, `year` and `region`.
+"""
+    return readme, agents
+
+
+def year_region_docs(collection_title: str, year: int, region: str, count: int) -> tuple[str, str]:
+    readme = _readme(
+        f"{region} — {year} — {collection_title}",
+        f"{collection_title} {year} 年のうち {region} のファイル {count} 件。",
+    )
+    agents = f"""# AGENTS.md — {collection_title} / {year} / {region}
+
+{count} files. The region here is the label upstream prints in the download
+table: a prefecture for most datasets, a river basin or a bureau for some, so
+it is not always a JIS prefecture code.
+
+Every Item carries the same year and therefore the same licence. For the same
+region across datasets, use `../../../../../regions/`.
+"""
+    return readme, agents

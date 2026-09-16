@@ -186,7 +186,11 @@ def test_a_region_catalog_points_back_at_the_items():
     assert cat["id"] == "region-39"
     assert cat["title"] == "高知 (39)"
     link = [x for x in cat["links"] if x["rel"] == "item"][0]
-    assert link["href"] == "../collections/P20/items/P20-12_39_GML.json"
+    # One node per directory: regions/39/catalog.json, so an Item is two
+    # levels up. Portolan's validator does not recognise a catalog whose file
+    # is not named catalog.json (PTL-LNK-006).
+    assert link["href"] == "../../collections/P20/items/P20-12_39_GML.json"
+    assert [x["href"] for x in cat["links"] if x["rel"] == "self"] == ["./catalog.json"]
     assert "避難施設データ" in link["title"]
 
 
@@ -272,3 +276,39 @@ def test_an_item_carries_the_datasets_real_crs_not_just_世界測地系():
                     "JGD2011 / （B, L）")
     assert it["properties"]["ksj:crs"] == "世界測地系"
     assert it["properties"]["ksj:coordinate_system"] == "JGD2011 / （B, L）"
+
+
+def test_a_big_collection_hands_out_years_instead_of_a_flat_list():
+    from mlit_nlftp_stac.stac import build_year_catalog, build_year_region_catalog
+
+    entries = [{"id": "A31b-25_3927", "title": "2025_3927", "region": "3927"}]
+    y = build_year_catalog("A31b", "洪水浸水想定区域データ (A31b)", 2025, entries)
+    assert y["ksj:year"] == 2025
+    # No regions passed: the Items hang directly off the year.
+    assert [l["href"] for l in y["links"] if l["rel"] == "item"] == [
+        "../../items/A31b-25_3927.json"]
+    assert [l["href"] for l in y["links"] if l["rel"] == "parent"] == [
+        "../../collection.json"]
+
+    regions = [{"slug": "3927", "name": "3927", "count": 1}]
+    y2 = build_year_catalog("A31b", "t", 2025, entries, regions)
+    # With regions the year lists regions and no Items: one or the other, never
+    # both, or the flat list PTL-CAT-001 objects to comes back.
+    assert [l["href"] for l in y2["links"] if l["rel"] == "child"] == ["./3927/catalog.json"]
+    assert not [l for l in y2["links"] if l["rel"] == "item"]
+
+    r = build_year_region_catalog("A31b", "t", 2025, "3927", entries)
+    assert [l["href"] for l in r["links"] if l["rel"] == "item"] == [
+        "../../../items/A31b-25_3927.json"]
+
+
+def test_every_generated_catalog_links_its_own_readme_and_agents():
+    from mlit_nlftp_stac.stac import build_year_catalog, build_year_region_catalog
+
+    for cat in (
+        build_year_catalog("A", "t", 2025, [{"id": "x", "title": "x", "region": ""}]),
+        build_year_region_catalog("A", "t", 2025, "39", [{"id": "x", "title": "x"}]),
+    ):
+        rels = {l["rel"]: l["href"] for l in cat["links"]}
+        assert rels["describedby"] == "./README.md"
+        assert rels["agents"] == "./AGENTS.md"

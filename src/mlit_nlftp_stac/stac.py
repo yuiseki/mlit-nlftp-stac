@@ -36,6 +36,19 @@ MLIT = {
     "url": "https://nlftp.mlit.go.jp/ksj/",
 }
 
+# Portolan PTL-PRV-002: exactly one provider carries the `host` role and is
+# listed last -- the party running this copy, not the cloud vendor under it,
+# and reachable. The files are MLIT's; this catalog is not, and until now
+# nothing here said who to complain to about a wrong footprint.
+HOST = {
+    "name": "yuiseki",
+    "roles": ["host"],
+    "url": "https://github.com/yuiseki/mlit-nlftp-stac",
+    "description": (
+        "国土数値情報のメタデータのミラー。データファイル自体は MLIT のサーバーにあります。"
+    ),
+}
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -335,7 +348,7 @@ def build_collection(
         # when the whole statement is that one licence. Most KSJ datasets split
         # their terms by year, which no single identifier can express.
         "license": spdx_from_terms(terms),
-        "providers": [MLIT],
+        "providers": [MLIT, HOST],
         "keywords": [
             k for k in (
                 "国土数値情報",
@@ -458,13 +471,14 @@ def build_category_catalog(name: str, members, base_url: str = "") -> dict:
         "description": f"国土数値情報のうち「{name}」に分類されるデータセット。",
         "ksj:category": name,
         "links": [
-            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+            {"rel": "root", "href": "../../catalog.json", "type": "application/json",
              "title": ROOT_TITLE},
-            {"rel": "parent", "href": "./catalog.json", "type": "application/json",
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
              "title": "分類別 (by category)"},
             {
                 "rel": "self",
-                "href": f"{base_url}/categories/{slug}.json" if base_url else f"./{slug}.json",
+                "href": (f"{base_url}/categories/{slug}/catalog.json"
+                         if base_url else "./catalog.json"),
                 "type": "application/json",
             },
         ]
@@ -472,7 +486,7 @@ def build_category_catalog(name: str, members, base_url: str = "") -> dict:
         + [
             {
                 "rel": "child",
-                "href": f"../collections/{m['id']}/collection.json",
+                "href": f"../../collections/{m['id']}/collection.json",
                 "type": "application/json",
                 "title": f"{m['title']} — {m['count']} 件",
             }
@@ -507,7 +521,7 @@ def build_categories_root(categories, base_url: str = "") -> dict:
         + [
             {
                 "rel": "child",
-                "href": f"./{_slug(c['name'])}.json",
+                "href": f"./{_slug(c['name'])}/catalog.json",
                 "type": "application/json",
                 "title": f"{c['name']} — {c['count']} データセット",
             }
@@ -552,14 +566,14 @@ def build_license_catalog(
         "description": f"{collection_title} のうち再配布の可否が「{status}」のファイル。",
         "ksj:redistribution": status,
         "links": [
-            {"rel": "root", "href": "../../catalog.json", "type": "application/json",
+            {"rel": "root", "href": "../../../catalog.json", "type": "application/json",
              "title": ROOT_TITLE},
-            {"rel": "parent", "href": "./catalog.json", "type": "application/json",
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
              "title": REDISTRIBUTION[status][0]},
             {
                 "rel": "self",
-                "href": (f"{base_url}/licenses/{status}/{collection_id}.json"
-                         if base_url else f"./{collection_id}.json"),
+                "href": (f"{base_url}/licenses/{status}/{collection_id}/catalog.json"
+                         if base_url else "./catalog.json"),
                 "type": "application/json",
             },
         ]
@@ -571,7 +585,7 @@ def build_license_catalog(
         + [
             {
                 "rel": "item",
-                "href": f"../../collections/{collection_id}/items/{e['id']}.json",
+                "href": f"../../../collections/{collection_id}/items/{e['id']}.json",
                 "type": "application/geo+json",
                 "title": e["title"],
             }
@@ -610,7 +624,7 @@ def build_license_status_root(status: str, groups: Iterable[dict], base_url: str
         + [
             {
                 "rel": "child",
-                "href": f"./{g['collection']}.json",
+                "href": f"./{g['collection']}/catalog.json",
                 "type": "application/json",
                 "title": f"{g['title']} — {g['count']} 件",
             }
@@ -687,13 +701,14 @@ def build_region_catalog(
         "ksj:region": name,
         "ksj:region_code": code,
         "links": [
-            {"rel": "root", "href": "../catalog.json", "type": "application/json",
+            {"rel": "root", "href": "../../catalog.json", "type": "application/json",
              "title": ROOT_TITLE},
-            {"rel": "parent", "href": "./catalog.json", "type": "application/json",
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
              "title": "地域別 (by region)"},
             {
                 "rel": "self",
-                "href": f"{base_url}/regions/{slug}.json" if base_url else f"./{slug}.json",
+                "href": (f"{base_url}/regions/{slug}/catalog.json"
+                         if base_url else "./catalog.json"),
                 "type": "application/json",
             },
         ]
@@ -701,7 +716,7 @@ def build_region_catalog(
         + [
             {
                 "rel": "item",
-                "href": f"../collections/{e['collection']}/items/{e['id']}.json",
+                "href": f"../../collections/{e['collection']}/items/{e['id']}.json",
                 "type": "application/geo+json",
                 "title": e["title"],
             }
@@ -736,7 +751,7 @@ def build_regions_root(regions: Iterable[dict], base_url: str = "") -> dict:
         + [
             {
                 "rel": "child",
-                "href": f"./{r['slug']}.json",
+                "href": f"./{r['slug']}/catalog.json",
                 "type": "application/json",
                 "title": f"{r['title']} — {r['count']} 件",
             }
@@ -881,3 +896,104 @@ def build_root(
 def write_json(path: Path, obj: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+# --- browsing a big Collection ---------------------------------------------
+#
+# PTL-CAT-001: a Collection that lists 603 Items in one flat array is readable
+# by a machine and not by a person. An agent can fetch items.parquet and
+# filter; someone looking for "the 2024 file for 高知" has to scan. These two
+# builders put a year, and where a year is still too long a region, between
+# the Collection and its Items.
+
+YEAR_GROUP_MIN = 20   # below this a flat list is easier than a tree
+REGION_GROUP_MIN = 60  # a year longer than this is split again by region
+
+
+def build_year_catalog(
+    collection_id: str,
+    collection_title: str,
+    year: int,
+    entries: Iterable[dict],
+    regions: Optional[Iterable[dict]] = None,
+    base_url: str = "",
+) -> dict:
+    """One year of one dataset. Children are regions, or the Items themselves."""
+    entries = list(entries)
+    regions = list(regions or [])
+    links = [
+        {"rel": "root", "href": "../../../../catalog.json", "type": "application/json",
+         "title": ROOT_TITLE},
+        {"rel": "parent", "href": "../../collection.json", "type": "application/json",
+         "title": collection_title},
+        {
+            "rel": "self",
+            "href": (f"{base_url}/collections/{collection_id}/years/{year}/catalog.json"
+                     if base_url else "./catalog.json"),
+            "type": "application/json",
+        },
+    ] + doc_links()
+    if regions:
+        links += [
+            {"rel": "child", "href": f"./{r['slug']}/catalog.json",
+             "type": "application/json",
+             "title": f"{r['name']} — {r['count']} 件"}
+            for r in regions
+        ]
+    else:
+        links += [
+            {"rel": "item", "href": f"../../items/{e['id']}.json",
+             "type": "application/geo+json", "title": e["title"]}
+            for e in entries
+        ]
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": f"{collection_id}-{year}",
+        "title": f"{year} — {collection_title}",
+        "description": (
+            f"{collection_title} のうち {year} 年のファイル {len(entries)} 件。"
+            + (f"{len(regions)} 地域に分かれています。" if regions else "")
+        ),
+        "ksj:year": year,
+        "links": links,
+    }
+
+
+def build_year_region_catalog(
+    collection_id: str,
+    collection_title: str,
+    year: int,
+    region: str,
+    entries: Iterable[dict],
+    base_url: str = "",
+) -> dict:
+    entries = list(entries)
+    slug = _slug(region)
+    return {
+        "type": "Catalog",
+        "stac_version": STAC_VERSION,
+        "id": f"{collection_id}-{year}-{slug}",
+        "title": f"{region} — {year} — {collection_title}",
+        "description": f"{collection_title} {year} 年のうち {region} のファイル {len(entries)} 件。",
+        "ksj:year": year,
+        "ksj:region": region,
+        "links": [
+            {"rel": "root", "href": "../../../../../catalog.json",
+             "type": "application/json", "title": ROOT_TITLE},
+            {"rel": "parent", "href": "../catalog.json", "type": "application/json",
+             "title": f"{year} — {collection_title}"},
+            {
+                "rel": "self",
+                "href": (f"{base_url}/collections/{collection_id}/years/{year}/{slug}/catalog.json"
+                         if base_url else "./catalog.json"),
+                "type": "application/json",
+            },
+        ]
+        + doc_links()
+        + [
+            {"rel": "item", "href": f"../../../items/{e['id']}.json",
+             "type": "application/geo+json", "title": e["title"]}
+            for e in entries
+        ],
+    }

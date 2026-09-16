@@ -19,6 +19,10 @@ from mlit_nlftp_stac.stac import _slug  # noqa: E402
 from mlit_nlftp_stac import docs  # noqa: E402
 from mlit_nlftp_stac.stac import (  # noqa: E402
     REDISTRIBUTION,
+    REGION_GROUP_MIN,
+    YEAR_GROUP_MIN,
+    build_year_catalog,
+    build_year_region_catalog,
     build_collection,
     build_item,
     build_license_catalog,
@@ -187,6 +191,52 @@ def main() -> int:
                 if url and url in codelists:
                     slug = url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
                     c["ksj:codelist_href"] = f"../../codelists/{slug}.json"
+        # PTL-CAT-001, and the same thing a person hits: 603 Item links in one
+        # array is a list nobody scrolls. Above YEAR_GROUP_MIN the Items move
+        # under a year, and a year longer than REGION_GROUP_MIN moves again
+        # under its region. Small datasets keep the flat list, which is easier
+        # than a tree of one.
+        if len(items) > YEAR_GROUP_MIN:
+            by_year: dict = defaultdict(list)
+            for it in items:
+                y = (it["properties"].get("start_datetime") or "")[:4]
+                entry = {"id": it["id"], "title": it["properties"].get("title") or it["id"],
+                         "region": it["properties"].get("ksj:region") or ""}
+                by_year[int(y) if y else 0].append(entry)
+            coll["links"] = [l for l in coll["links"] if l["rel"] != "item"]
+            for year in sorted(by_year, reverse=True):
+                rows = sorted(by_year[year], key=lambda e: (e["region"], e["title"]))
+                ydir = out / "collections" / cid / "years" / str(year)
+                region_rows = []
+                if len(rows) > REGION_GROUP_MIN:
+                    grouped: dict = defaultdict(list)
+                    for e in rows:
+                        grouped[e["region"] or "その他"].append(e)
+                    for rname in sorted(grouped):
+                        rslug = _slug(rname)
+                        write_json(
+                            ydir / rslug / "catalog.json",
+                            build_year_region_catalog(
+                                cid, coll_title, year, rname, grouped[rname], base_url),
+                        )
+                        write_docs(
+                            ydir / rslug,
+                            *docs.year_region_docs(coll_title, year, rname, len(grouped[rname])),
+                        )
+                        region_rows.append(
+                            {"slug": rslug, "name": rname, "count": len(grouped[rname])})
+                write_json(
+                    ydir / "catalog.json",
+                    build_year_catalog(cid, coll_title, year, rows, region_rows, base_url),
+                )
+                write_docs(ydir, *docs.year_docs(coll_title, year, len(rows), region_rows))
+                coll["links"].append({
+                    "rel": "child",
+                    "href": f"./years/{year}/catalog.json",
+                    "type": "application/json",
+                    "title": f"{year} — {len(rows)} 件"
+                             + (f" / {len(region_rows)} 地域" if region_rows else ""),
+                })
         write_json(out / "collections" / cid / "collection.json", coll)
         # The docs are written after the link post-processing below, once the
         # series and editorial links exist: an AGENTS.md that omits "often used
@@ -236,9 +286,10 @@ def main() -> int:
         code = regions[name].get("code")
         slug = code or name
         write_json(
-            out / "regions" / f"{slug}.json",
+            out / "regions" / slug / "catalog.json",
             build_region_catalog(code, name, entries, base_url),
         )
+        write_docs(out / "regions" / slug, *docs.region_docs(code, name, entries))
         region_index.append(
             {
                 "slug": slug,
@@ -260,8 +311,13 @@ def main() -> int:
         rows = []
         for cid, g in sorted(lic_groups.items()):
             write_json(
-                out / "licenses" / status / f"{cid}.json",
+                out / "licenses" / status / cid / "catalog.json",
                 build_license_catalog(status, cid, g["title"], g["entries"], base_url),
+            )
+            write_docs(
+                out / "licenses" / status / cid,
+                *docs.license_collection_docs(
+                    status, REDISTRIBUTION[status][0], g["title"], g["entries"]),
             )
             rows.append({"collection": cid, "title": g["title"], "count": len(g["entries"])})
         write_json(
@@ -391,8 +447,9 @@ def main() -> int:
 
     cat_index = []
     for name, members in sorted(by_category.items(), key=lambda kv: -len(kv[1])):
-        write_json(out / "categories" / f"{_slug(name)}.json",
+        write_json(out / "categories" / _slug(name) / "catalog.json",
                    build_category_catalog(name, members, base_url))
+        write_docs(out / "categories" / _slug(name), *docs.category_docs(name, members))
         cat_index.append({"name": name, "count": len(members)})
     if cat_index:
         write_json(out / "categories" / "catalog.json",
@@ -443,19 +500,15 @@ def main() -> int:
                                    encoding="utf-8")
     (out / "AGENTS.md").write_text(
         (ROOT / "docs" / "catalog-AGENTS.md").read_text(encoding="utf-8"), encoding="utf-8")
-    titled = sum(
-        1 for c in collections for link in c["links"] if link["rel"] == "item"
-    )
+    # Items are counted from the files, not from the Collections' item links:
+    # a grouped Collection links years, not Items, and counting links reported
+    # 21,246 of 177.
+    titled = sum(1 for _ in (out / "collections").glob("*/items/*.json"))
     named = sum(1 for rows_ in groups.values() for r in rows_ if (r.get("cells") or {}))
     print(f"{len(collections)} collections, {titled} items -> {out}")
     print(f"{named} of {titled} items carry the page's own row "
           f"({named * 100 // max(titled, 1)}%)")
-    located = sum(
-        1
-        for c in collections
-        for link in c["links"]
-        if link["rel"] == "item"
-    )
+    located = titled
     with_geom = _count_with_geometry(out)
     print(f"{with_geom} of {located} items have a footprint "
           f"({with_geom * 100 // max(located, 1)}%)")

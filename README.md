@@ -22,7 +22,7 @@ Browsable with nothing installed, in STAC Browser's hosted demo:
 Everything a dataset covering 高知 offers, in one request:
 
 ```bash
-curl -s https://stac.yuiseki.net/mlit-nlftp/regions/39.json \
+curl -s https://stac.yuiseki.net/mlit-nlftp/regions/39/catalog.json \
   | jq -r '.links[] | select(.rel=="item") | .title' | grep 津波
 # 2016_高知（平成28年） — 津波浸水想定データ (A40)
 ```
@@ -66,6 +66,10 @@ Four trees over the same 21,603 Items. A reader arriving with a theme takes
 `AGENTS.md` says which to take, and is linked rather than merely served: an
 unlinked document is not read.
 
+One node, one directory: `regions/39/catalog.json`, not `regions/39.json`.
+Portolan's validator does not recognise a catalog whose file is named anything
+else, so 193 of these were invisible to it (PTL-LNK-006) before the move.
+
 Every catalog and every Collection carries its own `README.md` and `AGENTS.md`,
 as Portolan requires, each referenced from the STAC document (`rel: describedby`
 and `rel: agents`). The per-dataset `AGENTS.md` is generated from that dataset's
@@ -85,7 +89,7 @@ whose terms permit redistribution: 11,538 of 21,603, across 47 datasets. 4,288
 may not be redistributed and 5,777 need a human to read the conditions. See
 below for why this is an Item-level question.
 
-**By region.** `regions/39.json` is every file that covers 高知 — 356 of them,
+**By region.** `regions/39/catalog.json` is every file that covers 高知 — 356 of them,
 each carrying the name of the dataset it came from. 56 such catalogs, 16,613 links.
 "What is there for this prefecture?" is the question people actually ask, and
 answering it from Collections alone meant opening all 110.
@@ -185,6 +189,11 @@ Worth knowing before you plan work around it:
   「一部制限」 is never resolved automatically: A40 lists which prefectures may
   redistribute and which must telephone first, and A27 says the terms differ
   per municipality and stops there. Those are `check`.
+- **Datasets with more than 20 files are browsed by year.** A Collection that
+  listed 603 Items in one array is readable by a query and not by a person, so
+  the Items sit under `years/<year>/`, and a year longer than 60 files splits
+  again by region. The Items themselves stay at `collections/<id>/items/`, so
+  every other link into them is unchanged.
 - **Upstream staleness is not flagged.** 避難施設 (P20) stopped in 2012. The
   catalog says when a file is from without saying that nothing newer exists.
 

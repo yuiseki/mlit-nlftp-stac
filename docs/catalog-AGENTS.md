@@ -21,10 +21,11 @@ urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "you"}
 | You want | Fetch |
 |---|---|
 | everything matching a filter | `items.parquet` (1.4 MB, all 21,603 items) |
-| what exists for a prefecture | `regions/<JIS code>.json` |
-| what there is on a theme | `categories/交通.json` and its 13 siblings |
+| what exists for a prefecture | `regions/<JIS code>/catalog.json` |
+| what there is on a theme | `categories/交通/catalog.json` and its 13 siblings |
 | what you may republish | `licenses/allowed/catalog.json` |
 | one dataset in detail | `collections/<id>/collection.json` |
+| one year of one dataset | `collections/<id>/years/<year>/catalog.json` |
 | that dataset's caveats before downloading | `collections/<id>/AGENTS.md` |
 
 Every catalog and every Collection here carries its own `README.md` and

@@ -19,7 +19,7 @@ collections/catalog.json                        by dataset
 collections/<id>/collection.json                Collection 110
 collections/<id>/items/<file>.json              Item    21,603
 regions/catalog.json                            by region
-regions/<code>.json                             Catalog     56
+regions/<code>/catalog.json                     Catalog     56
 licenses/catalog.json                           by licence
 licenses/<status>/<id>.json                     Catalog    120
 ```
@@ -242,7 +242,7 @@ wrong answer to the question a planner actually asks: what is there for 高知?
 Answering that from Collections alone means opening all 110 of them, and two
 agents asked to use this catalog both said so unprompted.
 
-`regions/<code>.json` is a Catalog of the same Items seen the other way, one
+`regions/<code>/catalog.json` is a Catalog of the same Items seen the other way, one
 per prefecture, per 地方, and one for 全国. 56 of them, 16,613 item links. Each
 link carries the collection's name alongside the item's title, so the list
 reads as 避難施設データ (P20) — 2012_高知（平成24年）.
@@ -323,3 +323,48 @@ that whole class of confusion from a dev loop.
 - Prefecture footprints, which need a per-dataset decision about what the
   two-digit token in a filename means.
 - Whether to emit stac-geoparquet alongside the JSON for bulk querying.
+
+## Portolan conformance, and where this catalog stops
+
+`portolan check --metadata --no-data` (portolan-cli, rashid rules) is run
+against the built catalog. Two of its findings were bugs and are fixed; four
+are deliberate, and they are listed here so that a later reader does not
+mistake them for oversights.
+
+Fixed:
+
+- **PTL-PRV-002** — every Collection now carries exactly one provider with the
+  `host` role, last in the list, with a URL to reach the maintainer. The data
+  is MLIT's; this copy is not, and nothing here said who to tell about a wrong
+  footprint.
+- **PTL-LNK-006** — 193 leaf catalogs were named `39.json`, `交通.json`,
+  `allowed/A09.json`. A generic Portolan client does not recognise a catalog
+  whose file is not `catalog.json`, so a third of this catalog was invisible to
+  it. Each now sits in its own directory. The old URLs are gone rather than
+  redirected.
+- **PTL-CAT-001** — 96 Collections listed every Item in one flat array, 603 of
+  them in the worst case. Now grouped by year, and by region within a year
+  where the year is still long.
+
+Not fixed, on purpose:
+
+- **PTL-CNF-001** (no Portolan schema URI in `stac_extensions`). The spec is
+  explicit that declaring the extension is a claim of conformance, not proof of
+  it, and that an object conforms only by passing the validator. This catalog
+  cannot pass PTL-VIZ-001, so declaring would be a false claim. The URI goes in
+  when the claim is true.
+- **PTL-VIZ-001** (no `thumbnail` asset). A thumbnail is supposed to be
+  generated from the data's default styling. We hold no data: the zips stay on
+  MLIT's servers, 228 GB of them, and a third may not be redistributed. A
+  picture of a prefecture outline would not be a preview of the data, it would
+  be a picture of the bbox we already publish.
+- **PTL-AST-003** (no `file:checksum`, 21,603 warnings). Portolan's own text
+  answers this: a catalog that describes data it does not host cannot always
+  produce them, and a fabricated value is worse than an absent one. We would
+  have to download 228 GB to compute them and re-download to keep them true.
+  `file:size` is measured by HEAD, which is honest and cheap; a checksum is
+  neither.
+- **PTL-COL-003** (Collection ids are not lowercase). The ids are KSJ's own
+  identifiers: `A40`, `N02`, `mesh500r6`. They are how every MLIT page, every
+  filename and every existing tool names these datasets. A lowercase rename
+  would be a private spelling of a public identifier.
